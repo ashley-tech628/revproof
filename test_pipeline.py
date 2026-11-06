@@ -92,6 +92,16 @@ class PipelineTest(unittest.TestCase):
         assessment = check_candidate(row, "The retry limit is 2.")
         self.assertFalse(assessment["checks"]["protected_facts_present"])
 
+    def test_flask_prompt_pilot_false_accept_is_caught(self):
+        rows = read_records(Path(__file__).parent / "data" / "flask_pilot_audited.jsonl")
+        observed = {"flask_python_min_change": "Python Version",
+                    "flask_python_min_keep": "Python Version: 3.9"}
+        for row in rows:
+            self.assertTrue(check_candidate(row, template_edit(row))["passes_string_checks"])
+            assessment = check_candidate(row, observed[row["id"]])
+            self.assertFalse(assessment["checks"]["protected_facts_present"])
+            self.assertFalse(assessment["passes_string_checks"])
+
     def test_version_filter_is_strong_retrieval_baseline(self):
         row = build_rows()[0]
         row["z"] = "change"
