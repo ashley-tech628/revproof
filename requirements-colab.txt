@@ -1,0 +1,9 @@
+transformers>=4.51,<5
+peft>=0.16,<1
+accelerate>=1,<2
+bitsandbytes>=0.45,<1
+trl>=0.19,<1
+datasets>=3,<5
+sentence-transformers>=3,<6
+sentencepiece>=0.2,<1
+pandas>=2,<4
