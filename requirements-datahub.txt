@@ -1,14 +1,13 @@
-# For the ECE285 DataHub image with system torch 2.2.1+cu121.
-# Install in a fresh venv created with --system-site-packages.
-# The torch pin keeps pip from downloading a different CUDA stack.
-torch==2.2.1
-numpy<2
-transformers==4.51.3
-peft==0.16.0
-accelerate==1.4.0
-bitsandbytes==0.45.5
-trl==0.19.1
+# For the ECE285 DataHub RTX PRO 6000 Blackwell (sm_120).
+# Install in a fresh venv WITHOUT --system-site-packages. The course image's
+# torch 2.2.1+cu121 cannot execute kernels on this GPU.
+torch==2.15.0
+transformers==4.57.6
+peft==0.21.2
+accelerate==1.15.0
+bitsandbytes==0.50.2
+trl==0.29.1
 datasets==3.6.0
-sentence-transformers==4.1.0
+sentence-transformers==5.7.0
 sentencepiece>=0.2,<1
 pandas>=2,<3

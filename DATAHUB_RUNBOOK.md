@@ -11,27 +11,27 @@ python -c "import torch; print('CUDA:', torch.cuda.is_available()); print('torch
 
 Record the GPU model, total memory, and Python/PyTorch versions in your experiment notes. If CUDA is false in the selected GPU environment, resolve that before installing models.
 
-## 2. Upload and install
+## 2. Upload and install on the RTX PRO 6000 Blackwell
 
 Use Jupyter's file browser to upload the small `revproof.zip` from your computer into your **course home directory**. In Terminal, from the directory where it was uploaded:
 
 ```bash
 unzip -o revproof.zip
 cd revproof
-python -m venv --system-site-packages .venv_datahub
-.venv_datahub/bin/python -m pip install -r requirements-datahub.txt
-.venv_datahub/bin/python -m unittest discover -p test_pipeline.py -v
-.venv_datahub/bin/python check_datahub_runtime.py
+python -m venv .venv_blackwell
+.venv_blackwell/bin/python -m pip install -r requirements-datahub.txt
+.venv_blackwell/bin/python -m unittest discover -p test_pipeline.py -v
+.venv_blackwell/bin/python check_datahub_runtime.py
 ```
 
-[UCSD's DataHub FAQ](https://support.ucsd.edu/its?id=kb_article_view&sys_kb_id=b096442e9718f650992771611153afed) recommends a virtual environment for custom packages. `--system-site-packages` lets it see the course image's CUDA-enabled PyTorch. The DataHub requirements pin that existing torch version and a compatible QLoRA stack. **Do not use `requirements-colab.txt` on this DataHub image.** If you previously installed it in `.venv`, leave that old environment alone and use the new `.venv_datahub`. The eight unit tests do not exercise CUDA; proceed only after `check_datahub_runtime.py` prints `4-bit CUDA operation: OK`. If pip cannot resolve packages or the preflight fails, share its exact final error and the output of `nvidia-smi`. Keep the project and `runs/` in the course home directory so outputs survive notebook container restarts; check your storage quota before downloading large model weights.
+[UCSD's DataHub FAQ](https://support.ucsd.edu/its?id=kb_article_view&sys_kb_id=b096442e9718f650992771611153afed) recommends a virtual environment for custom packages. This GPU reports compute capability `sm_120`; the course image's PyTorch 2.2.1+cu121 is too old to run its kernels. Create `.venv_blackwell` **without** `--system-site-packages` so the old PyTorch, torchvision and torchaudio cannot leak into the new environment. Leave earlier `.venv` and `.venv_datahub` directories alone. The eight unit tests do not exercise CUDA; proceed only after `check_datahub_runtime.py` prints both CUDA operations as OK. If pip cannot resolve packages or the preflight fails, share its exact final error and the output of `nvidia-smi`. Keep the project and `runs/` in the course home directory so outputs survive notebook container restarts; check your storage quota before downloading large model weights.
 
 ## 3. GPU smoke run (fictional data)
 
 ```bash
-.venv_datahub/bin/python make_toy_data.py
-.venv_datahub/bin/python train_generator.py --data data/toy.jsonl --output runs/toy_sft --epochs 1 --allow-synthetic-smoke
-.venv_datahub/bin/python evaluate_generator.py --data data/toy.jsonl --split dev --adapter runs/toy_sft/adapter --output runs/toy_sft_dev.jsonl
+.venv_blackwell/bin/python make_toy_data.py
+.venv_blackwell/bin/python train_generator.py --data data/toy.jsonl --output runs/toy_sft --epochs 1 --allow-synthetic-smoke
+.venv_blackwell/bin/python evaluate_generator.py --data data/toy.jsonl --split dev --adapter runs/toy_sft/adapter --output runs/toy_sft_dev.jsonl
 ```
 
 This tests 4-bit model loading, training, checkpoint saving, and inference. The toy data are fictional; **never report toy scores as research results**.
