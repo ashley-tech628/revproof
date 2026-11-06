@@ -16,21 +16,22 @@ Record the GPU model, total memory, and Python/PyTorch versions in your experime
 Use Jupyter's file browser to upload the small `revproof.zip` from your computer into your **course home directory**. In Terminal, from the directory where it was uploaded:
 
 ```bash
-unzip revproof.zip
+unzip -o revproof.zip
 cd revproof
-python -m venv --system-site-packages .venv
-.venv/bin/python -m pip install -r requirements-colab.txt
-.venv/bin/python -m unittest discover -p test_pipeline.py -v
+python -m venv --system-site-packages .venv_datahub
+.venv_datahub/bin/python -m pip install -r requirements-datahub.txt
+.venv_datahub/bin/python -m unittest discover -p test_pipeline.py -v
+.venv_datahub/bin/python check_datahub_runtime.py
 ```
 
-[UCSD's DataHub FAQ](https://support.ucsd.edu/its?id=kb_article_view&sys_kb_id=b096442e9718f650992771611153afed) recommends a virtual environment for custom packages. `--system-site-packages` lets it see the course image's CUDA-enabled PyTorch if present. If dependency installation changes or breaks PyTorch, stop and inspect the environment instead of continuing a GPU run blindly. Keep the project and `runs/` in the course home directory so outputs survive notebook container restarts; check your storage quota before downloading large model weights.
+[UCSD's DataHub FAQ](https://support.ucsd.edu/its?id=kb_article_view&sys_kb_id=b096442e9718f650992771611153afed) recommends a virtual environment for custom packages. `--system-site-packages` lets it see the course image's CUDA-enabled PyTorch. The DataHub requirements pin that existing torch version and a compatible QLoRA stack. **Do not use `requirements-colab.txt` on this DataHub image.** If you previously installed it in `.venv`, leave that old environment alone and use the new `.venv_datahub`. The eight unit tests do not exercise CUDA; proceed only after `check_datahub_runtime.py` prints `4-bit CUDA operation: OK`. If pip cannot resolve packages or the preflight fails, share its exact final error and the output of `nvidia-smi`. Keep the project and `runs/` in the course home directory so outputs survive notebook container restarts; check your storage quota before downloading large model weights.
 
 ## 3. GPU smoke run (fictional data)
 
 ```bash
-.venv/bin/python make_toy_data.py
-.venv/bin/python train_generator.py --data data/toy.jsonl --output runs/toy_sft --epochs 1 --allow-synthetic-smoke
-.venv/bin/python evaluate_generator.py --data data/toy.jsonl --split dev --adapter runs/toy_sft/adapter --output runs/toy_sft_dev.jsonl
+.venv_datahub/bin/python make_toy_data.py
+.venv_datahub/bin/python train_generator.py --data data/toy.jsonl --output runs/toy_sft --epochs 1 --allow-synthetic-smoke
+.venv_datahub/bin/python evaluate_generator.py --data data/toy.jsonl --split dev --adapter runs/toy_sft/adapter --output runs/toy_sft_dev.jsonl
 ```
 
 This tests 4-bit model loading, training, checkpoint saving, and inference. The toy data are fictional; **never report toy scores as research results**.

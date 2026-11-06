@@ -26,6 +26,8 @@ The key comparison is simple replacement versus conditional or cross-sentence ed
 
 Use Python 3.10+ in a Colab GPU runtime. Install `requirements-colab.txt`. Qwen3 requires Transformers 4.51 or newer. The default model is `Qwen/Qwen2.5-1.5B-Instruct` for a small GPU pilot. If GPU memory permits, use `--model Qwen/Qwen3-4B-Instruct-2507` consistently across prompt-only, SFT, and DPO conditions. Do not compare different backbones as if fine-tuning were the only change.
 
+For UCSD DataHub's ECE285 image, follow [DATAHUB_RUNBOOK.md](DATAHUB_RUNBOOK.md) and install `requirements-datahub.txt` in a fresh virtual environment. Its system PyTorch build needs a pinned dependency stack.
+
 Run local checks:
 
 ```bash
