@@ -6,7 +6,7 @@ RevProof studies whether a conditional autoregressive language model can learn t
 
 - Local data, split, audit, preference, retrieval, and template-baseline checks pass. See `test_pipeline.py`.
 - `data/flask_pilot_audited.jsonl` has **two questions from one real revision group**, both in dev. The template matches both spans. The audit is documented in `data/flask_candidate_audit.md`.
-- No QLoRA, DPO, or reranker GPU training has been run in this repository. Do not report toy scores or unrun stages as model results.
+- A user-run DataHub GPU smoke test completed QLoRA SFT and dev inference on the fictional toy rows (Qwen2.5-1.5B-Instruct, one epoch, two dev rows). The screenshot reported 2/2 exact spans. Raw run artifacts remain in the DataHub workspace and are not archived here. This validates the training path only; no real-data QLoRA, DPO, or reranker GPU experiment has been run. Do not report toy scores as research results.
 - `revproof_colab.ipynb` gives a cell-by-cell Colab workflow; `COLAB_RUNBOOK.md` and `DATAHUB_RUNBOOK.md` cover both platforms.
 
 ## Research pipeline
