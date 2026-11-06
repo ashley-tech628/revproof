@@ -2,6 +2,8 @@
 
 Open `revproof_colab.ipynb` in Google Colab, choose **Runtime → Change runtime type → GPU**, and run cells in order. Upload `revproof.zip` when prompted. The notebook checks the GPU and installs `requirements-colab.txt` before loading any model. Keep a copy of all predictions and run metadata outside the ephemeral Colab runtime.
 
+Before preparing real data, the optional toy GPU smoke cell can test QLoRA model loading, training, adapter saving, and inference. It uses four fictional training rows and is never a research result.
+
 ## Gate 1: audited data
 
 Upload a `real.jsonl` in the format of `data/flask_pilot_audited.jsonl`. It must contain nonempty, disjoint train and dev revision groups; reserve test groups untouched. The included Flask pilot has only **one dev group** and cannot train a research model. `read_records` validates the schema and common leakage cases. Manually check old/new facts, version, scope, and protected facts. Do not use raw Git hunks as labels.
