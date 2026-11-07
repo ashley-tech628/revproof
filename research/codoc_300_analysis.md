@@ -64,3 +64,22 @@ verified evidence and a non-CoDocBench evaluation set.
 Prior work: [FELIX](https://aclanthology.org/2020.findings-emnlp.111/),
 [EdiT5](https://arxiv.org/abs/2205.12209), and the
 [CoDocBench dataset paper](https://arxiv.org/abs/2502.00519).
+
+## 900-step follow-up (screenshots only; prediction files pending)
+
+The user ran fresh 900-step jobs on the same data hash, with the same
+1,773/254 project-disjoint rows. Each reached epoch 1.01. The full-text run
+again scored 7/254 exact (train loss 0.5102); the character-offset plan run
+again scored 0/254 exact, with 248/254 applicable plans (train loss 1.1025).
+Thus tripling the training steps did not improve exact-match generalization in
+either objective. The two training losses are **not directly comparable**
+because the supervised outputs differ. We cannot yet determine whether the
+900-step plans improved localization or semantic quality: those questions
+require `dev_predictions.jsonl`, not just the run summaries. The tokenizer,
+Triton, and generation-flag warnings shown in the screenshots did not stop
+training or evaluation.
+
+Do not spend another long GPU run on these unchanged objectives until the
+900-step predictions have been inspected. The next work is per-example failure
+analysis and a code-diff support audit, then a new localization representation
+with a separately measured end-to-end result.
