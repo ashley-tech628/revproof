@@ -98,6 +98,12 @@ The exploratory sparse-editor runner evaluates **dev only**, since the v2 test h
 .venv_blackwell/bin/python run_sparse_pilot.py --backend causal --model Qwen/Qwen2.5-1.5B-Instruct --output runs/sparse_qwen_1p5b --stage all
 ```
 
+The sparse pilot results are analyzed in [results/sparse_15c6e2f/ANALYSIS.md](results/sparse_15c6e2f/ANALYSIS.md). To isolate replacement generation from failed location prediction, a **diagnostic only** FLAN-T5 run supplies the gold target-derived edit location on dev. Its scores have target-location leakage and are not deployable accuracy:
+
+```bash
+.venv_blackwell/bin/python run_oracle_infill_pilot.py --output runs/oracle_flan_large --stage all
+```
+
 The retrieval runner builds fixed pools with same-version distractors, evaluates BM25 and a pretrained cross-encoder, then trains the same cross-encoder on real-only pairs. DPO requires an independently completed train-candidate audit; run `run_dpo_pilot.py --audit data/sft_train_audit.csv` only after that audit. Do not treat literal pass/fail labels as human preference labels.
 
 Individual commands remain available:

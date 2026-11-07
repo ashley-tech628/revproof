@@ -76,3 +76,26 @@ cd ~/revproof
 ```
 
 Each run writes `protocol.json`, `commands.jsonl`, the LoRA adapter, raw dev predictions, summaries, and `generator_table.json`. Run the FLAN condition first. Do not infer semantic correctness from exact match or literal checks; audit the actual revised text. If you use Colab Pro instead, follow `revproof_sparse_colab.ipynb` and inspect the actual GPU allocation before training.
+
+## 7. Oracle-location infilling diagnostic
+
+The first sparse-editor GPU pilot failed to reconstruct any of the nine dev paragraphs. See [the per-case analysis](results/sparse_15c6e2f/ANALYSIS.md). This next experiment exposes the **gold edit location**, derived from the target paragraph, and asks FLAN-T5-large to generate only replacement text. It separates replacement generation from location prediction and JSON formatting. Its scores are an **oracle upper bound with target-location leakage**, not deployable accuracy. It uses dev only; the previously inspected test is excluded.
+
+Upload the new project zip under a distinct filename, then from the DataHub Terminal:
+
+```bash
+cd ~
+unzip -o revproof_oracle.zip
+cd ~/revproof
+.venv_blackwell/bin/python -m unittest discover -p 'test_*.py' -v
+.venv_blackwell/bin/python run_oracle_infill_pilot.py --output runs/oracle_flan_large --stage all
+```
+
+This writes `runs/oracle_flan_large/protocol.json`, prompt-only and LoRA dev predictions and summaries, the adapter, and `generator_table.json`. The runner records the dataset hash and refuses to reuse an output directory with a different protocol. Compare the two dev predictions per case; teacher-forced loss alone does not demonstrate successful generation. Keep this table separate from the deployable sparse-editor comparison.
+
+To return a compact archive for analysis:
+
+```bash
+cd ~/revproof
+tar -czf ~/revproof_oracle_results.tgz runs/oracle_flan_large/protocol.json runs/oracle_flan_large/commands.jsonl runs/oracle_flan_large/generator_table.json runs/oracle_flan_large/prompt_dev.jsonl runs/oracle_flan_large/prompt_dev.summary.json runs/oracle_flan_large/sft_dev.jsonl runs/oracle_flan_large/sft_dev.summary.json runs/oracle_flan_large/sft/run.json
+```

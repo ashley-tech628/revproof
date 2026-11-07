@@ -5,12 +5,22 @@ import json
 from pathlib import Path
 
 from revproof_data import read_records
-from sparse_edit import edit_prompt, gold_script, script_text
+from sparse_edit import edit_prompt, gold_script, oracle_infill_prompt, script_text
 
 
-def encode_row(tokenizer, row, backend, max_input_length, max_target_length):
-    source = edit_prompt(row)
-    target = script_text(gold_script(row["old_span"], row["new_span"]))
+def encode_row(tokenizer, row, backend, max_input_length, max_target_length,
+               objective="edit_script"):
+    script = gold_script(row["old_span"], row["new_span"])
+    if objective == "oracle_infill":
+        if backend != "seq2seq":
+            raise ValueError("oracle infilling is implemented for seq2seq only")
+        source = oracle_infill_prompt(row)
+        target = script["new"]
+    elif objective == "edit_script":
+        source = edit_prompt(row)
+        target = script_text(script)
+    else:
+        raise ValueError(f"unknown objective: {objective}")
     if backend == "causal":
         source = tokenizer.apply_chat_template(
             [{"role": "user", "content": source}], tokenize=False,
@@ -49,8 +59,10 @@ def collate(batch, pad_id):
 
 
 class EncodedDataset:
-    def __init__(self, rows, tokenizer, backend, max_input_length, max_target_length):
-        self.items = [encode_row(tokenizer, row, backend, max_input_length, max_target_length)
+    def __init__(self, rows, tokenizer, backend, max_input_length, max_target_length,
+                 objective="edit_script"):
+        self.items = [encode_row(tokenizer, row, backend, max_input_length,
+                                 max_target_length, objective)
                       for row in rows]
 
     def __len__(self):
@@ -65,6 +77,8 @@ def main():
     ap.add_argument("--data", default="data/real_v2.jsonl")
     ap.add_argument("--output", required=True)
     ap.add_argument("--backend", choices=["causal", "seq2seq"], required=True)
+    ap.add_argument("--objective", choices=["edit_script", "oracle_infill"],
+                    default="edit_script")
     ap.add_argument("--model")
     ap.add_argument("--epochs", type=float, default=3)
     ap.add_argument("--lr", type=float, default=1e-4)
@@ -77,6 +91,8 @@ def main():
         ap.error("epochs, lr, and gradient-accumulation must be positive")
     if args.max_input_length < 1 or args.max_target_length < 1:
         ap.error("token limits must be positive")
+    if args.objective == "oracle_infill" and args.backend != "seq2seq":
+        ap.error("oracle_infill currently requires --backend seq2seq")
     model_name = args.model or ("Qwen/Qwen2.5-1.5B-Instruct" if args.backend == "causal"
                                 else "google/flan-t5-large")
 
@@ -104,9 +120,11 @@ def main():
     if args.backend == "causal":
         tokenizer.pad_token = tokenizer.eos_token
     train_set = EncodedDataset(train, tokenizer, args.backend,
-                               args.max_input_length, args.max_target_length)
+                               args.max_input_length, args.max_target_length,
+                               args.objective)
     dev_set = EncodedDataset(dev, tokenizer, args.backend,
-                             args.max_input_length, args.max_target_length)
+                             args.max_input_length, args.max_target_length,
+                             args.objective)
     lengths = {split: {"max_source": max(x["source_tokens"] for x in dataset.items),
                        "max_target": max(x["target_tokens"] for x in dataset.items)}
                for split, dataset in (("train", train_set), ("dev", dev_set))}
@@ -166,7 +184,8 @@ def main():
         "max_target_length": args.max_target_length,
         "gpu": torch.cuda.get_device_name(0), "torch": torch.__version__,
         "transformers": transformers.__version__, "peft": peft.__version__,
-        "objective": "single-window JSON edit script; unchanged text is copied exactly",
+        "objective": args.objective,
+        "oracle_location": args.objective == "oracle_infill",
     }
     (output / "run.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
     print(json.dumps(metrics, indent=2))

@@ -115,3 +115,33 @@ def edit_prompt(row):
         f"Marked old paragraph: {row['old_span']}\n"
         f"Text after marked paragraph: {row['suffix']}"
     )
+
+
+def oracle_infill_prompt(row):
+    """Diagnostic input with the gold edit location exposed.
+
+    This uses ``new_span`` to locate the window and must never be reported as
+    a deployable or leakage-free evaluation. The replacement is not included.
+    """
+    if row.get("prompt_version") != "v2_fact_card" or not row.get("change_spec"):
+        raise ValueError("oracle infilling requires a complete v2 fact card")
+    old = row["old_span"]
+    anchor = gold_script(old, row["new_span"])["old"]
+    if old.count(anchor) != 1:
+        raise AssertionError("oracle anchor must be unique")
+    if "<edit>" in old or "</edit>" in old:
+        raise ValueError("source contains reserved edit markers")
+    marked = old.replace(anchor, "<edit>" + anchor + "</edit>", 1)
+    facts = "\n".join("- " + x for x in row["change_spec"])
+    protected = "\n".join("- " + x for x in row["protected_facts"])
+    return (
+        "Replace only the text inside <edit>...</edit> in the technical-document "
+        "paragraph. Output only the replacement text, with no tags, JSON, or "
+        "explanation. Preserve the text outside the markers exactly.\n"
+        f"Question: {row['question']}\n"
+        f"Version: {row['version_before']} -> {row['version_after']}\n"
+        f"Scope: {row['scope']}\n"
+        f"Required new facts:\n{facts}\n"
+        f"Protected facts:\n{protected or '- Preserve still-correct details.'}\n"
+        f"Old paragraph with oracle edit location: {marked}"
+    )

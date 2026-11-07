@@ -4,8 +4,10 @@ import unittest
 from pathlib import Path
 
 from evaluate_sparse_editor import assess, summarize
+from evaluate_oracle_infill import assess_infill
 from revproof_data import read_records
-from sparse_edit import apply_script, edit_prompt, gold_script, parse_script, script_text
+from sparse_edit import (apply_script, edit_prompt, gold_script,
+                         oracle_infill_prompt, parse_script, script_text)
 from train_sparse_editor import encode_row
 
 
@@ -77,6 +79,26 @@ class SparseEditTest(unittest.TestCase):
         self.assertEqual(len(seq["input_ids"]), seq["source_tokens"])
         with self.assertRaisesRegex(ValueError, "exceed limits"):
             encode_row(tokenizer, row, "seq2seq", 5, 5)
+
+    def test_oracle_infill_is_location_diagnostic(self):
+        tokenizer = TinyTokenizer()
+        for row in self.rows:
+            with self.subTest(row=row["id"]):
+                script = gold_script(row["old_span"], row["new_span"])
+                prompt = oracle_infill_prompt(row)
+                self.assertIn("<edit>" + script["old"] + "</edit>", prompt)
+                self.assertNotIn(row["new_span"], prompt)
+                encoded = encode_row(tokenizer, row, "seq2seq", 10000, 10000,
+                                     "oracle_infill")
+                self.assertEqual(encoded["target_tokens"],
+                                 len(tokenizer(script["new"], add_special_tokens=True).input_ids))
+                perfect = assess_infill(row, script["new"])
+                self.assertTrue(perfect["exact_span"])
+                self.assertTrue(perfect["exact_replacement"])
+                self.assertEqual(perfect["prediction"], row["new_span"])
+        with self.assertRaisesRegex(ValueError, "seq2seq only"):
+            encode_row(tokenizer, self.rows[0], "causal", 10000, 10000,
+                       "oracle_infill")
 
 
 if __name__ == "__main__":
