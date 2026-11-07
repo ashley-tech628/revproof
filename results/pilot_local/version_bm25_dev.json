@@ -1,0 +1,11 @@
+{
+  "method": "version_bm25",
+  "model": null,
+  "queries": 5,
+  "revision_groups": 4,
+  "mrr_at_5": 1.0,
+  "recall_at_5": 1.0,
+  "top1_relevance": 1.0,
+  "top1_wrong_version": 0.0,
+  "nonempty_result_rate": 1.0
+}

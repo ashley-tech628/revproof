@@ -5,9 +5,10 @@ RevProof studies whether a conditional autoregressive language model can learn t
 ## Current status
 
 - Local data, split, audit, preference, retrieval, and template-baseline checks pass. See `test_pipeline.py`.
-- `data/flask_pilot_audited.jsonl` has **two questions from one real revision group**, both in dev. The template matches both spans. The audit is documented in `data/flask_candidate_audit.md`.
+- `data/real.jsonl` now has **26 rows from 22 source-linked revision groups**: 15 train groups (Node.js), 4 dev groups (held-out Node.js release transition), and 3 test groups (Flask). The selected old/new excerpts were verified against official release tags. See `data/pilot_data_audit.md` for selection rules and limitations.
 - A user-run DataHub GPU smoke test completed QLoRA SFT and dev inference on the fictional toy rows (Qwen2.5-1.5B-Instruct, one epoch, two dev rows). The screenshot reported 2/2 exact spans. Raw run artifacts remain in the DataHub workspace and are not archived here. This validates the training path only; no real-data QLoRA, DPO, or reranker GPU experiment has been run. Do not report toy scores as research results.
-- A prompt-only real Flask pilot produced two invalid shortened spans; the template was exact on both. One invalid span initially passed literal checks. The manual audit and updated protected-fact annotation are in `data/flask_candidate_audit.md`. This is one revision group, not a comparative performance estimate.
+- A prompt-only real Flask pilot produced two invalid shortened spans; the template was exact on both. One invalid span initially passed literal checks. The case audit and updated protected-fact annotation are in `data/flask_candidate_audit.md`.
+- On the expanded pilot, the deterministic template is exact on **2/5 dev questions** and **2/4 test questions**. The test literal checker passes 4/4, including incomplete edits; manual semantic review is required. No expanded-pilot prompt-only, real-data SFT, DPO, or trained-reranker run has been completed yet.
 - `revproof_colab.ipynb` gives a cell-by-cell Colab workflow; `COLAB_RUNBOOK.md` and `DATAHUB_RUNBOOK.md` cover both platforms.
 
 ## Research pipeline
@@ -43,7 +44,17 @@ Toy rows are fictional pipeline checks only. `--allow-synthetic-smoke` is requir
 
 Each JSONL row has `id`, `group`, `split`, `source_type`, `source_url`, `question`, `answer_before`, `answer_after`, `prefix`, `old_span`, `new_span`, `suffix`, `field`, `old_value`, `new_value`, `version_before`, `version_after`, and `scope`. See `make_toy_data.py` and `data/flask_pilot_audited.jsonl`. Optional `protected_facts` is a list of strings to preserve; `edit_type` is `scalar`, `conditional`, or `cross_sentence`. `z=keep/change` is derived from the two audited answers.
 
-Only manually confirmed factual revisions belong in `data/real.jsonl`. Use a stable source permalink, verify both tagged versions and applicable scope, and keep all questions and descendants of the same revision in one group and split. Hold out complete release transitions or document families where possible. The loader detects duplicate IDs, group leakage, and identical source-revision leakage, but no automatic check replaces a provenance audit.
+Only source-checked revisions belong in `data/real.jsonl`. The current pilot uses official tagged Node.js and Flask documentation, with normalized line wraps and manually selected question/fact cues; it does **not** independently test the API runtime behavior. Use a stable source permalink, verify both tagged versions and applicable scope, and keep all questions and descendants of the same revision in one group and split. Hold out complete release transitions or document families where possible. The loader detects duplicate IDs, group leakage, identical source-revision leakage, and gold spans that fail annotated literal checks. These checks do not establish semantic validity.
+
+Rebuild and verify the pilot:
+
+```bash
+python build_pilot_data.py
+python verify_pilot_sources.py --cache ../work/pilot_source_cache
+python -m unittest discover -p test_pipeline.py -v
+```
+
+The source verifier needs network access once; the committed JSONL dataset does not.
 
 To collect *unreviewed* candidates from a public repository:
 
@@ -63,6 +74,17 @@ python triage_candidates.py --input data/candidates.jsonl --output data/triaged.
 ## Generator experiment
 
 Use the *same model ID* throughout a comparison:
+
+On the ECE285 DataHub Blackwell GPU, the frozen pilot runner executes template, prompt-only, QLoRA SFT, and equal-budget four-candidate filtered comparisons on dev and test, then aggregates a table. It records the dataset SHA-256 and every command. This is a small pilot, not a population-level performance estimate:
+
+```bash
+.venv_blackwell/bin/python run_datahub_pilot.py --stage all
+.venv_blackwell/bin/python run_retrieval_pilot.py
+```
+
+The retrieval runner builds fixed pools with same-version distractors, evaluates BM25 and a pretrained cross-encoder, then trains the same cross-encoder on real-only pairs. DPO requires an independently completed train-candidate audit; run `run_dpo_pilot.py --audit data/sft_train_audit.csv` only after that audit. Do not treat literal pass/fail labels as human preference labels.
+
+Individual commands remain available:
 
 ```bash
 python train_generator.py --data data/real.jsonl --output runs/sft --model Qwen/Qwen2.5-1.5B-Instruct
@@ -107,6 +129,6 @@ For a genuine downstream data-utility study, curate same-version distractors and
 
 ## Evidence and limits
 
-Current pilot: one Flask factual revision group gives two questions; the template is exact on both. A two-document retrieval sanity check ranks the old version first under BM25 and the current version first under exact version filtering. These checks establish neither SFT improvement nor downstream generalization. Publication-level claims would require more independent revision groups, complex edit types, calibrated human assessment, and held-out repository evaluation.
+The original Flask-only pilot has one factual revision group with two questions; the template is exact on both. The expanded real pilot adds Node.js train/dev transitions and Flask test groups. Its template result shows that literal checks can accept incomplete edits. Fixed-pool BM25 and version-filtered BM25 now include same-version distractors, but the held-out pools remain small and version filtering still has a high ceiling. No real-data SFT gain or downstream data-utility gain has yet been established. Publication-level claims require more independent release transitions, document families, calibrated human assessment, and uncertainty analysis by revision group.
 
 Implementation references: [Qwen model card](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct), [PEFT 4-bit training](https://huggingface.co/docs/peft/developer_guides/quantization), [TRL DPO trainer](https://huggingface.co/docs/trl/dpo_trainer), and [Sentence Transformers cross-encoders](https://www.sbert.net/docs/cross_encoder/training_overview.html).

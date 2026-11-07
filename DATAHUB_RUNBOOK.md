@@ -36,9 +36,17 @@ python -m venv .venv_blackwell
 
 This tests 4-bit model loading, training, checkpoint saving, and inference. The toy data are fictional; **never report toy scores as research results**.
 
-## 4. Real experiment
+## 4. Real pilot experiment
 
-Audit versioned documents and upload `data/real.jsonl` with disjoint train/dev/test revision groups. The included Flask file has just one dev revision group and cannot train a research model. Then run the commands in [README.md](README.md): SFT; template, prompt-only, and SFT dev evaluation; optional train-only audit and DPO; and fixed-candidate retrieval baselines. Keep the same backbone for all learned generator conditions. Save the JSONL predictions, `.summary.json`, `run.json`, and human annotation CSV with your report materials.
+The current zip includes `data/real.jsonl`: 15 Node.js train revision groups, 4 Node.js dev groups from a held-out release transition, and 3 Flask test groups. Source excerpts were checked against old/new official tags; the sample is still small. Upload the **latest zip with a distinct filename**, unzip with `-o`, and confirm `data/real.jsonl` is present. Then run:
+
+```bash
+.venv_blackwell/bin/python -m unittest discover -p test_pipeline.py -v
+.venv_blackwell/bin/python run_datahub_pilot.py --stage all
+.venv_blackwell/bin/python run_retrieval_pilot.py
+```
+
+The generator runner performs a preflight, template and prompt-only baselines, real-data QLoRA SFT, greedy dev/test evaluation, and equal-budget four-candidate filtered comparisons. It writes predictions, summaries, training run metadata, a dataset hash, and `runs/pilot/generator_table.csv`. The retrieval runner trains the real-only MiniLM cross-encoder and evaluates the same fixed candidate pools for all methods. These pilots have few held-out groups; assess generated edits manually before making semantic claims. DPO requires completed train-only human preference labels and is not run automatically.
 
 The Colab notebook contains `google.colab.files` and `/content/...` paths, so use these Terminal commands on DataHub. If DataHub is congested or its assigned GPU cannot fit your selected model, upload the same `revproof.zip` and notebook to Colab and run the Colab workflow there.
 

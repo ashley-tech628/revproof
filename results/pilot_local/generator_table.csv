@@ -1,0 +1,3 @@
+split,method,n_questions,n_revision_groups,exact_span_rate,literal_check_rate,pass_at_n_literal,all_questions_exact_group_rate,all_questions_literal_group_rate,mean_candidates,data_sha256
+dev,template,5,4,0.4,0.4,0.4,0.5,0.5,1.0,ae9862b22dd5cb7f7733a7d4df8631551de2c660a7c6eacb45ce2fc7119df54f
+test,template,4,3,0.5,1.0,1.0,0.3333333333333333,1.0,1.0,ae9862b22dd5cb7f7733a7d4df8631551de2c660a7c6eacb45ce2fc7119df54f

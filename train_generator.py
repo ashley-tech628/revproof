@@ -1,5 +1,6 @@
 """QLoRA SFT of a local replacement-span generator. Run on Colab GPU."""
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
@@ -62,7 +63,7 @@ def main():
                               BitsAndBytesConfig, Trainer, TrainingArguments)
 
     if not torch.cuda.is_available():
-        raise RuntimeError("QLoRA training requires a CUDA GPU; use Colab GPU runtime")
+        raise RuntimeError("QLoRA training requires a CUDA GPU runtime")
     rows = read_records(args.data)
     if not args.allow_synthetic_smoke and any(r["source_type"] != "real" for r in rows):
         raise ValueError("toy examples cannot be used for a research run")
@@ -114,6 +115,7 @@ def main():
         "train_groups": len({r["group"] for r in train}),
         "dev_groups": len({r["group"] for r in dev}),
         "data": args.data, "train_metrics": result.metrics,
+        "data_sha256": hashlib.sha256(Path(args.data).read_bytes()).hexdigest(),
         "dev_metrics": metrics, "toy_smoke": args.allow_synthetic_smoke,
         "gpu": torch.cuda.get_device_name(0), "torch": torch.__version__,
         "transformers": transformers.__version__, "peft": peft.__version__,

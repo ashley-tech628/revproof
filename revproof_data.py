@@ -46,6 +46,9 @@ def read_records(path):
         if row["new_value"] not in row["new_span"]:
             raise ValueError(f"line {number}: new_value absent from new_span")
         row["z"] = "keep" if row["answer_before"] == row["answer_after"] else "change"
+        gold_checks = check_candidate(row, row["new_span"])
+        if not gold_checks["passes_string_checks"]:
+            raise ValueError(f"line {number}: gold span fails checks: {gold_checks['checks']}")
         records.append(row)
     ids = [r["id"] for r in records]
     if len(ids) != len(set(ids)):

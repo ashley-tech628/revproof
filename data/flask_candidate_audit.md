@@ -18,6 +18,8 @@ Source: [official Git comparison](https://github.com/pallets/flask/compare/3.0.3
 
 Candidate 7 yields two *questions* about one real edit: a `change` question about the minimum supported version and a `keep` question about the recommendation to use the latest Python. Both are in `flask_pilot_audited.jsonl` with the **same group and dev split**. The template baseline exactly matches the two target spans; the two questions are one revision, not two independent data points. This trivial replacement is a strong negative control for the hypothesis that learning is useful.
 
+In the expanded `data/real.jsonl` pilot, this same group is copied to the **test** split alongside two further Flask documentation edits. The original standalone file remains a record of the earlier dev pilot; do not mix its split label with the expanded dataset.
+
 ## Prompt-only pilot and verifier audit (2026-11-06)
 
 A user-run DataHub evaluation of `Qwen/Qwen2.5-1.5B-Instruct` without an adapter generated the following replacement spans (greedy decoding, one candidate per question):

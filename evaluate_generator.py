@@ -1,5 +1,6 @@
 """Evaluate local document edits at a fixed candidate budget."""
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
@@ -48,7 +49,17 @@ def summarize(results):
                 "selected_string_check_rate": sum(x["passes_string_checks"] for x in part) / len(part),
                 "string_pass_at_n": sum(x["any_candidate_passes_string_checks"] for x in part) / len(part),
                 "mean_candidates_generated": sum(x["candidate_count"] for x in part) / len(part)}
-    return {**rates(results),
+    grouped = {}
+    for row in results:
+        grouped.setdefault(row["group"], []).append(row)
+    group_rates = {
+        "n_groups": len(grouped),
+        "all_questions_exact_rate": sum(all(x["exact_span"] for x in group)
+                                         for group in grouped.values()) / len(grouped),
+        "all_questions_string_check_rate": sum(all(x["passes_string_checks"] for x in group)
+                                                for group in grouped.values()) / len(grouped),
+    }
+    return {**rates(results), "by_revision_group": group_rates,
             "source_type": sorted({x["source_type"] for x in results}),
             "by_answer_relation": {z: rates(part) for z in ("keep", "change")
                                    if (part := [x for x in results if x["z"] == z])},
@@ -105,7 +116,8 @@ def main():
     output.write_text("\n".join(json.dumps(x, ensure_ascii=False) for x in results) + "\n", encoding="utf-8")
     summary = summarize(results)
     summary.update({"model": "template" if args.template_only else args.model,
-                    "adapter": args.adapter, "filter": args.filter, "seed": args.seed})
+                    "adapter": args.adapter, "filter": args.filter, "seed": args.seed,
+                    "data_sha256": hashlib.sha256(Path(args.data).read_bytes()).hexdigest()})
     (output.with_suffix(".summary.json")).write_text(json.dumps(summary, indent=2), encoding="utf-8")
     print(json.dumps(summary, indent=2))
     print("String checks and exact match do not establish semantic validity; audit predictions manually.")

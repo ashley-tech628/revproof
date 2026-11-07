@@ -8,6 +8,7 @@ from pathlib import Path
 
 from make_toy_data import build_rows
 from make_retrieval_benchmark import build as build_retrieval
+from make_retrieval_pool import build as build_fixed_pool
 from make_reranker_pairs import build as build_reranker
 from prepare_preferences import build_pairs
 from revproof_data import check_candidate, old_document, read_records, template_edit
@@ -101,6 +102,23 @@ class PipelineTest(unittest.TestCase):
             assessment = check_candidate(row, observed[row["id"]])
             self.assertFalse(assessment["checks"]["protected_facts_present"])
             self.assertFalse(assessment["passes_string_checks"])
+
+    def test_real_pilot_gold_and_fixed_pool(self):
+        rows = read_records(Path(__file__).parent / "data" / "real.jsonl")
+        self.assertEqual({s: len({r["group"] for r in rows if r["split"] == s})
+                          for s in ("train", "dev", "test")},
+                         {"train": 15, "dev": 4, "test": 3})
+        transitions = {}
+        for row in rows:
+            self.assertTrue(check_candidate(row, row["new_span"])["passes_string_checks"])
+            key = (row["version_before"], row["version_after"])
+            transitions.setdefault(key, set()).add(row["split"])
+        self.assertTrue(all(len(splits) == 1 for splits in transitions.values()))
+        for split in ("dev", "test"):
+            pool = build_fixed_pool(rows, split)
+            for query in pool:
+                self.assertGreaterEqual(sum(c["version"] == query["requested_version"]
+                                            and not c["relevant"] for c in query["candidates"]), 1)
 
     def test_version_filter_is_strong_retrieval_baseline(self):
         row = build_rows()[0]
