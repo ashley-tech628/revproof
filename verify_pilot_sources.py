@@ -24,11 +24,16 @@ def fetch(url, cache):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cache", default="data/source_verification_cache")
+    ap.add_argument("--include-v2", action="store_true",
+                    help="also verify previously untested v22-to-v23 held-out Node edits")
     args = ap.parse_args()
     root = Path(__file__).parent
     cache = Path(args.cache)
     node = [json.loads(line) for line in (root / "data/node_selected_sources.jsonl")
             .read_text(encoding="utf-8").splitlines() if line]
+    if args.include_v2:
+        node.extend(json.loads(line) for line in (root / "data/v2_new_test_sources.jsonl")
+                    .read_text(encoding="utf-8").splitlines() if line)
     flask = [json.loads(line) for line in (root / "data/flask_selected_sources.jsonl")
              .read_text(encoding="utf-8").splitlines() if line]
     checked = 0

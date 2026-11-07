@@ -48,6 +48,18 @@ The current zip includes `data/real.jsonl`: 15 Node.js train revision groups, 4 
 
 The generator runner performs a preflight, template and prompt-only baselines, real-data QLoRA SFT, greedy dev/test evaluation, and equal-budget four-candidate filtered comparisons. It writes predictions, summaries, training run metadata, a dataset hash, and `runs/pilot/generator_table.csv`. The retrieval runner trains the real-only MiniLM cross-encoder and evaluates the same fixed candidate pools for all methods. These pilots have few held-out groups; assess generated edits manually before making semantic claims. DPO requires completed train-only human preference labels and is not run automatically.
 
+## 5. Revised fact-card pilot with a fresh test transition
+
+The first GPU pilot is archived in `results/datahub_223b776/`. Its complex targets were sometimes impossible to infer from the short input cue. The [v2 protocol](data/v2_protocol.md) adds complete, manually reviewed change facts and reserves a previously untested Node release transition. After uploading the latest project zip, use the existing `.venv_blackwell` environment:
+
+```bash
+cd ~/revproof
+.venv_blackwell/bin/python -m unittest discover -p test_pipeline.py -v
+.venv_blackwell/bin/python run_datahub_pilot.py --data data/real_v2.jsonl --output runs/v2 --prompt-version v2 --stage all
+```
+
+Keep `runs/v2` separate from `runs/pilot`; the two tasks have different inputs and held-out groups. The runner produces an unlabelled audit CSV under `runs/v2/diagnostics/`. Inspect selected outputs for all fact-card requirements before making semantic claims. The new test should be evaluated only once under this frozen configuration.
+
 The Colab notebook contains `google.colab.files` and `/content/...` paths, so use these Terminal commands on DataHub. If DataHub is congested or its assigned GPU cannot fit your selected model, upload the same `revproof.zip` and notebook to Colab and run the Colab workflow there.
 
 UCSD notes that course workspaces provide storage but busy cluster periods can lead to eviction notices. Colab also has variable GPU availability and session limits. Keep checkpoints and copied results outside a temporary runtime.

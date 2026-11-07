@@ -48,6 +48,8 @@ def load_results(data, runs):
                     "split": split, "method": method, "id": row["id"],
                     "group": row["group"], "edit_type": row["edit_type"],
                     "question": row["question"], "old_span": row["old_span"],
+                    "change_spec": json.dumps(row.get("change_spec", []), ensure_ascii=False),
+                    "protected_facts": json.dumps(row["protected_facts"], ensure_ascii=False),
                     "gold_span": row["new_span"], "prediction": prediction,
                     "selected_exact": prediction == row["new_span"],
                     "selected_literal": result["passes_string_checks"],

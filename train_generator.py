@@ -4,12 +4,12 @@ import hashlib
 import json
 from pathlib import Path
 
-from revproof_data import prompt, read_records
+from revproof_data import prompt, prompt_v2, read_records
 
 
-def encode_row(tokenizer, row, max_length):
+def encode_row(tokenizer, row, max_length, prompt_fn=prompt):
     prefix = tokenizer.apply_chat_template(
-        [{"role": "user", "content": prompt(row)}],
+        [{"role": "user", "content": prompt_fn(row)}],
         tokenize=False, add_generation_prompt=True,
     )
     prefix_ids = tokenizer(prefix, add_special_tokens=False).input_ids
@@ -22,8 +22,8 @@ def encode_row(tokenizer, row, max_length):
 
 
 class EditDataset:
-    def __init__(self, rows, tokenizer, max_length):
-        self.items = [encode_row(tokenizer, row, max_length) for row in rows]
+    def __init__(self, rows, tokenizer, max_length, prompt_fn=prompt):
+        self.items = [encode_row(tokenizer, row, max_length, prompt_fn) for row in rows]
 
     def __len__(self):
         return len(self.items)
@@ -53,6 +53,7 @@ def main():
     ap.add_argument("--gradient-accumulation", type=int, default=8)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--allow-synthetic-smoke", action="store_true")
+    ap.add_argument("--prompt-version", choices=["v1", "v2"], default="v1")
     args = ap.parse_args()
 
     import torch
@@ -75,9 +76,19 @@ def main():
         raise ValueError("gradient-accumulation must be positive")
     if len({r["group"] for r in train}) < 3 and not args.allow_synthetic_smoke:
         print("Warning: fewer than three independent train revisions; this is a pipeline pilot only.")
+    prompt_fn = prompt_v2 if args.prompt_version == "v2" else prompt
+    if args.prompt_version == "v2" and any(r.get("prompt_version") != "v2_fact_card" for r in rows):
+        raise ValueError("v2 training requires fact-card rows")
+    if args.prompt_version == "v1" and any(r.get("prompt_version") == "v2_fact_card" for r in rows):
+        raise ValueError("fact-card rows require --prompt-version v2")
 
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     tokenizer.pad_token = tokenizer.eos_token
+    train_data = EditDataset(train, tokenizer, args.max_length, prompt_fn)
+    dev_data = EditDataset(dev, tokenizer, args.max_length, prompt_fn)
+    lengths = {"train_max": max(len(item["input_ids"]) for item in train_data.items),
+               "dev_max": max(len(item["input_ids"]) for item in dev_data.items)}
+    print("Encoded sequence lengths:", lengths)
     bf16 = torch.cuda.is_bf16_supported()
     quant = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
                               bnb_4bit_use_double_quant=True,
@@ -102,8 +113,8 @@ def main():
         remove_unused_columns=False, seed=args.seed,
     )
     trainer = Trainer(model=model, args=train_args,
-                      train_dataset=EditDataset(train, tokenizer, args.max_length),
-                      eval_dataset=EditDataset(dev, tokenizer, args.max_length),
+                      train_dataset=train_data,
+                      eval_dataset=dev_data,
                       data_collator=lambda batch: collate(batch, tokenizer.pad_token_id),
                       processing_class=tokenizer)
     result = trainer.train()
@@ -121,6 +132,8 @@ def main():
         "transformers": transformers.__version__, "peft": peft.__version__,
         "seed": args.seed, "epochs": args.epochs, "lr": args.lr,
         "gradient_accumulation": args.gradient_accumulation,
+        "prompt_version": args.prompt_version,
+        "encoded_sequence_lengths": lengths,
     }, indent=2), encoding="utf-8")
     print(json.dumps(metrics, indent=2))
 

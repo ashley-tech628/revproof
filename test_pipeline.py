@@ -11,7 +11,7 @@ from make_retrieval_benchmark import build as build_retrieval
 from make_retrieval_pool import build as build_fixed_pool
 from make_reranker_pairs import build as build_reranker
 from prepare_preferences import build_pairs
-from revproof_data import check_candidate, old_document, read_records, template_edit
+from revproof_data import check_candidate, old_document, prompt_v2, read_records, template_edit
 from retrieval_eval import bm25, score_row
 
 
@@ -119,6 +119,21 @@ class PipelineTest(unittest.TestCase):
             for query in pool:
                 self.assertGreaterEqual(sum(c["version"] == query["requested_version"]
                                             and not c["relevant"] for c in query["candidates"]), 1)
+
+    def test_v2_fact_cards_and_fresh_holdout(self):
+        rows = read_records(Path(__file__).parent / "data" / "real_v2.jsonl")
+        self.assertEqual({s: len({r["group"] for r in rows if r["split"] == s})
+                          for s in ("train", "dev", "test")},
+                         {"train": 15, "dev": 7, "test": 4})
+        self.assertEqual({(r["version_before"], r["version_after"])
+                          for r in rows if r["split"] == "test"},
+                         {("v22.14.0", "v23.11.0")})
+        for row in rows:
+            text = prompt_v2(row)
+            self.assertIn("Facts the new span must express:", text)
+            self.assertNotIn(row["new_span"], text)
+        with self.assertRaisesRegex(ValueError, "change_spec"):
+            prompt_v2(build_rows()[0])
 
     def test_version_filter_is_strong_retrieval_baseline(self):
         row = build_rows()[0]

@@ -34,6 +34,11 @@ def read_records(path):
         if any(x not in row["prefix"] + row["old_span"] + row["suffix"] for x in protected):
             raise ValueError(f"line {number}: protected fact absent from old document")
         row["protected_facts"] = protected
+        if "change_spec" in row:
+            change_spec = row["change_spec"]
+            if not isinstance(change_spec, list) or not change_spec or not all(
+                    isinstance(fact, str) and fact.strip() for fact in change_spec):
+                raise ValueError(f"line {number}: change_spec must be a nonempty list of facts")
         if row.get("edit_type", "scalar") not in {"scalar", "conditional", "cross_sentence"}:
             raise ValueError(f"line {number}: invalid edit_type")
         row.setdefault("edit_type", "scalar")
@@ -92,6 +97,29 @@ def prompt(row):
         f"Facts to preserve: {json.dumps(row['protected_facts'], ensure_ascii=False)}\n"
         f"Before marked span: {row['prefix']}\n"
         f"Marked span to replace: {row['old_span']}\n"
+        f"After marked span: {row['suffix']}"
+    )
+
+
+def prompt_v2(row):
+    """Fact-card editing prompt; every requested new fact is supplied as input."""
+    if row.get("prompt_version") != "v2_fact_card" or not row.get("change_spec"):
+        raise ValueError("v2 prompt requires a manually reviewed change_spec")
+    facts = "\n".join(f"- {fact}" for fact in row["change_spec"])
+    preserved = ("\n".join(f"- {fact}" for fact in row["protected_facts"])
+                 or "- Preserve all still-correct details in the old span.")
+    return (
+        "Edit exactly one marked span in a versioned technical document. "
+        "Output the complete replacement span only: no heading, code fence, explanation, "
+        "or copied surrounding sections. Preserve technical syntax and all still-correct facts.\n"
+        f"Question: {row['question']}\n"
+        f"Version: {row['version_before']} -> {row['version_after']}\n"
+        f"Document scope: {row['scope']}\n"
+        f"Facts the new span must express:\n{facts}\n"
+        f"Facts that must remain:\n{preserved}\n"
+        f"Stale text or value to revise: {row['old_value']}\n"
+        f"Before marked span: {row['prefix']}\n"
+        f"Marked old span: {row['old_span']}\n"
         f"After marked span: {row['suffix']}"
     )
 

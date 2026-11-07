@@ -9,6 +9,7 @@ RevProof studies whether a conditional autoregressive language model can learn t
 - An earlier user-run DataHub GPU smoke test completed QLoRA SFT and dev inference on fictional toy rows (Qwen2.5-1.5B-Instruct, one epoch, two dev rows). The screenshot reported 2/2 exact spans. Toy scores are pipeline checks, not research results.
 - A prompt-only real Flask pilot produced two invalid shortened spans; the template was exact on both. One invalid span initially passed literal checks. The case audit and updated protected-fact annotation are in `data/flask_candidate_audit.md`.
 - The expanded real-data DataHub pilot has completed prompt-only generation, three-epoch QLoRA SFT, four-sample filtering, and real-only MiniLM reranker training. The deterministic template is exact on **2/5 dev** and **2/4 test** questions; SFT is exact on **1/5 dev** and **0/4 test**. The trained reranker does not improve top-1 ranking over the pretrained model in this tiny pool. See [the archived run and error analysis](results/datahub_223b776/ANALYSIS.md). DPO and generated-document retrieval augmentation have not been run.
+- A [second, frozen fact-card protocol](data/v2_protocol.md) now supplies complete desired facts and reserves four previously untested Node revisions as a fresh test set. It has not been run on a GPU yet. Its scores must be reported separately from the original task.
 - `revproof_colab.ipynb` gives a cell-by-cell Colab workflow; `COLAB_RUNBOOK.md` and `DATAHUB_RUNBOOK.md` cover both platforms.
 
 ## Research pipeline
@@ -81,6 +82,14 @@ On the ECE285 DataHub Blackwell GPU, the frozen pilot runner executes template, 
 .venv_blackwell/bin/python run_datahub_pilot.py --stage all
 .venv_blackwell/bin/python run_retrieval_pilot.py
 ```
+
+For the revised fact-card task, use a **new output directory** and the predeclared [v2 protocol](data/v2_protocol.md):
+
+```bash
+.venv_blackwell/bin/python run_datahub_pilot.py --data data/real_v2.jsonl --output runs/v2 --prompt-version v2 --stage all
+```
+
+The v2 runner also exports per-example diagnostics and an unlabelled semantic-audit CSV. The original `data/real.jsonl` and its archived results remain immutable.
 
 The retrieval runner builds fixed pools with same-version distractors, evaluates BM25 and a pretrained cross-encoder, then trains the same cross-encoder on real-only pairs. DPO requires an independently completed train-candidate audit; run `run_dpo_pilot.py --audit data/sft_train_audit.csv` only after that audit. Do not treat literal pass/fail labels as human preference labels.
 

@@ -4,7 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from revproof_data import check_candidate, prompt, read_records, template_edit
+from revproof_data import check_candidate, prompt, prompt_v2, read_records, template_edit
 
 
 def load_model(name, adapter=None):
@@ -26,9 +26,9 @@ def load_model(name, adapter=None):
     return tok, model
 
 
-def generate(tok, model, row, max_new_tokens, n, temperature):
+def generate(tok, model, row, max_new_tokens, n, temperature, prompt_fn=prompt):
     import torch
-    text = tok.apply_chat_template([{"role": "user", "content": prompt(row)}],
+    text = tok.apply_chat_template([{"role": "user", "content": prompt_fn(row)}],
                                    tokenize=False, add_generation_prompt=True)
     inputs = tok(text, return_tensors="pt", add_special_tokens=False).to(next(model.parameters()).device)
     sampling = n > 1
@@ -80,6 +80,7 @@ def main():
     ap.add_argument("--filter", action="store_true", help="choose first candidate passing string checks")
     ap.add_argument("--template-only", action="store_true")
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--prompt-version", choices=["v1", "v2"], default="v1")
     args = ap.parse_args()
     if args.num_candidates < 1 or args.temperature <= 0:
         raise ValueError("num-candidates and temperature must be positive")
@@ -89,6 +90,11 @@ def main():
     if not rows:
         raise ValueError(f"empty {args.split} split")
     tok = model = None
+    prompt_fn = prompt_v2 if args.prompt_version == "v2" else prompt
+    if args.prompt_version == "v2" and any(r.get("prompt_version") != "v2_fact_card" for r in rows):
+        raise ValueError("v2 evaluation requires fact-card rows")
+    if args.prompt_version == "v1" and any(r.get("prompt_version") == "v2_fact_card" for r in rows):
+        raise ValueError("fact-card rows require --prompt-version v2")
     if not args.template_only:
         import torch
         torch.manual_seed(args.seed)
@@ -96,7 +102,8 @@ def main():
     results = []
     for row in rows:
         spans = ([template_edit(row)] if args.template_only else
-                 generate(tok, model, row, args.max_new_tokens, args.num_candidates, args.temperature))
+                 generate(tok, model, row, args.max_new_tokens, args.num_candidates,
+                          args.temperature, prompt_fn))
         assessments = [check_candidate(row, span) for span in spans]
         passing = [i for i, a in enumerate(assessments) if a["passes_string_checks"]]
         selected = passing[0] if args.filter and passing else 0
@@ -117,7 +124,8 @@ def main():
     summary = summarize(results)
     summary.update({"model": "template" if args.template_only else args.model,
                     "adapter": args.adapter, "filter": args.filter, "seed": args.seed,
-                    "data_sha256": hashlib.sha256(Path(args.data).read_bytes()).hexdigest()})
+                    "data_sha256": hashlib.sha256(Path(args.data).read_bytes()).hexdigest(),
+                    "prompt_version": args.prompt_version})
     (output.with_suffix(".summary.json")).write_text(json.dumps(summary, indent=2), encoding="utf-8")
     print(json.dumps(summary, indent=2))
     print("String checks and exact match do not establish semantic validity; audit predictions manually.")
