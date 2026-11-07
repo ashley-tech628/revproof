@@ -110,6 +110,8 @@ The next GPU run is paused while the [research reset](research/evidence_grounded
 
 The [large-data plan](research/dataset_sources.md) distinguishes FRUIT evidence-grounded examples, CoDocBench technical-domain silver revisions, and CoEdIT editing pretraining. `multispan_edit.py` adds exact-copy multi-span labels and an evidence provenance gate; external rows are not yet mixed into the v2 training/evaluation pipeline.
 
+The runnable [CoDocBench training pilot](research/codoc_training_runbook.md) starts with three-example training positive controls, then compares same-project-split full-docstring generation to multi-span edit-plan generation on the publisher's train portion. This is unaudited code-conditioned editing; the proposed verified evidence-grounded tagger/infiller remains future work.
+
 The retrieval runner builds fixed pools with same-version distractors, evaluates BM25 and a pretrained cross-encoder, then trains the same cross-encoder on real-only pairs. DPO requires an independently completed train-candidate audit; run `run_dpo_pilot.py --audit data/sft_train_audit.csv` only after that audit. Do not treat literal pass/fail labels as human preference labels.
 
 Individual commands remain available:
