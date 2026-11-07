@@ -141,7 +141,9 @@ def main():
         gradient_accumulation_steps=args.gradient_accumulation,
         learning_rate=args.lr, eval_strategy="epoch", save_strategy="epoch",
         save_total_limit=1, logging_steps=1, report_to="none",
-        gradient_checkpointing=True, bf16=bf16, fp16=args.backend == "causal" and not bf16,
+        gradient_checkpointing=True,
+        gradient_checkpointing_kwargs={"use_reentrant": False},
+        bf16=bf16, fp16=args.backend == "causal" and not bf16,
         optim=optimizer, remove_unused_columns=False, seed=args.seed)
     trainer = Trainer(model=model, args=train_args, train_dataset=train_set,
                       eval_dataset=dev_set,
