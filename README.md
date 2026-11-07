@@ -9,8 +9,8 @@ RevProof studies whether a conditional autoregressive language model can learn t
 - An earlier user-run DataHub GPU smoke test completed QLoRA SFT and dev inference on fictional toy rows (Qwen2.5-1.5B-Instruct, one epoch, two dev rows). The screenshot reported 2/2 exact spans. Toy scores are pipeline checks, not research results.
 - A prompt-only real Flask pilot produced two invalid shortened spans; the template was exact on both. One invalid span initially passed literal checks. The case audit and updated protected-fact annotation are in `data/flask_candidate_audit.md`.
 - The expanded real-data DataHub pilot has completed prompt-only generation, three-epoch QLoRA SFT, four-sample filtering, and real-only MiniLM reranker training. The deterministic template is exact on **2/5 dev** and **2/4 test** questions; SFT is exact on **1/5 dev** and **0/4 test**. The trained reranker does not improve top-1 ranking over the pretrained model in this tiny pool. See [the archived run and error analysis](results/datahub_223b776/ANALYSIS.md). DPO and generated-document retrieval augmentation have not been run.
-- A [second, frozen fact-card protocol](data/v2_protocol.md) now supplies complete desired facts and reserves four previously untested Node revisions as a fresh test set. It has not been run on a GPU yet. Its scores must be reported separately from the original task.
-- `revproof_colab.ipynb` gives a cell-by-cell Colab workflow; `COLAB_RUNBOOK.md` and `DATAHUB_RUNBOOK.md` cover both platforms.
+- The [v2 fact-card pilot](data/v2_protocol.md) has been run on a DataHub GPU. Full-paragraph QLoRA SFT has 0/9 dev and 0/4 test exact spans, compared with 4/9 and 1/4 for the deterministic template. The four test outputs have been inspected; they are no longer a fresh holdout for new architecture choices. Exact match and literal checks are not semantic-validity scores.
+- A [new architecture plan](research/architecture_decision.md) and `sparse_edit.py` implement a single-window, exact-copy edit-script objective. `train_sparse_editor.py`, `evaluate_sparse_editor.py`, and `run_sparse_pilot.py` provide Qwen causal and FLAN-T5 encoder-decoder ablations. The new model has **not yet been trained on a GPU**, so no gain is claimed. `revproof_sparse_colab.ipynb` is the current Colab workflow; `revproof_colab.ipynb` is the historical v1 workflow.
 
 ## Research pipeline
 
@@ -34,7 +34,7 @@ For UCSD DataHub's Blackwell GPU, follow [DATAHUB_RUNBOOK.md](DATAHUB_RUNBOOK.md
 Run local checks:
 
 ```bash
-python -m unittest discover -p test_pipeline.py -v
+python -m unittest discover -p 'test_*.py' -v
 python make_toy_data.py
 python evaluate_generator.py --data data/toy.jsonl --split test --template-only --output runs/toy_template.jsonl
 ```
@@ -90,6 +90,13 @@ For the revised fact-card task, use a **new output directory** and the predeclar
 ```
 
 The v2 runner also exports per-example diagnostics and an unlabelled semantic-audit CSV. The original `data/real.jsonl` and its archived results remain immutable.
+
+The exploratory sparse-editor runner evaluates **dev only**, since the v2 test has been viewed. On the working DataHub Blackwell environment, run both model conditions with separate output directories:
+
+```bash
+.venv_blackwell/bin/python run_sparse_pilot.py --backend seq2seq --model google/flan-t5-large --output runs/sparse_flan_large --stage all
+.venv_blackwell/bin/python run_sparse_pilot.py --backend causal --model Qwen/Qwen2.5-1.5B-Instruct --output runs/sparse_qwen_1p5b --stage all
+```
 
 The retrieval runner builds fixed pools with same-version distractors, evaluates BM25 and a pretrained cross-encoder, then trains the same cross-encoder on real-only pairs. DPO requires an independently completed train-candidate audit; run `run_dpo_pilot.py --audit data/sft_train_audit.csv` only after that audit. Do not treat literal pass/fail labels as human preference labels.
 

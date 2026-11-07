@@ -1,0 +1,250 @@
+{
+  "data_sha256": "2f1c9f060639d6b2f72d12d1bd29589c590032e543c1178e0a48e6c352c3d796",
+  "method": "one shortest unique word-aligned contiguous window per independent group",
+  "splits": {
+    "train": {
+      "question_rows": 17,
+      "independent_groups": 15,
+      "old_chars": 2894,
+      "anchor_chars": 297,
+      "replacement_chars": 857,
+      "script_chars": 1441,
+      "median_anchor_fraction": 0.09090909090909091,
+      "whole_span_windows": 0,
+      "groups": [
+        {
+          "group": "node_http_v16.20.2_v17.9.1_0190",
+          "old_chars": 242,
+          "anchor_chars": 119,
+          "replacement_chars": 124,
+          "script_chars": 262,
+          "anchor_fraction": 0.49173553719008267
+        },
+        {
+          "group": "node_http_v16.20.2_v17.9.1_0191",
+          "old_chars": 124,
+          "anchor_chars": 13,
+          "replacement_chars": 15,
+          "script_chars": 49,
+          "anchor_fraction": 0.10483870967741936
+        },
+        {
+          "group": "node_http_v17.9.1_v18.20.8_0092",
+          "old_chars": 294,
+          "anchor_chars": 11,
+          "replacement_chars": 80,
+          "script_chars": 110,
+          "anchor_fraction": 0.03741496598639456
+        },
+        {
+          "group": "node_http_v17.9.1_v18.20.8_0094",
+          "old_chars": 259,
+          "anchor_chars": 24,
+          "replacement_chars": 72,
+          "script_chars": 115,
+          "anchor_fraction": 0.09266409266409266
+        },
+        {
+          "group": "node_fs_v17.9.1_v18.20.8_0101",
+          "old_chars": 274,
+          "anchor_chars": 5,
+          "replacement_chars": 68,
+          "script_chars": 92,
+          "anchor_fraction": 0.01824817518248175
+        },
+        {
+          "group": "node_stream_v17.9.1_v18.20.8_0179",
+          "old_chars": 210,
+          "anchor_chars": 7,
+          "replacement_chars": 127,
+          "script_chars": 153,
+          "anchor_fraction": 0.03333333333333333
+        },
+        {
+          "group": "node_url_v17.9.1_v18.20.8_0060",
+          "old_chars": 49,
+          "anchor_chars": 6,
+          "replacement_chars": 35,
+          "script_chars": 60,
+          "anchor_fraction": 0.12244897959183673
+        },
+        {
+          "group": "node_url_v17.9.1_v18.20.8_0066",
+          "old_chars": 77,
+          "anchor_chars": 7,
+          "replacement_chars": 35,
+          "script_chars": 61,
+          "anchor_fraction": 0.09090909090909091
+        },
+        {
+          "group": "node_buffer_v17.9.1_v18.20.8_0034",
+          "old_chars": 158,
+          "anchor_chars": 27,
+          "replacement_chars": 22,
+          "script_chars": 68,
+          "anchor_fraction": 0.17088607594936708
+        },
+        {
+          "group": "node_errors_v19.9.0_v20.19.0_0403",
+          "old_chars": 282,
+          "anchor_chars": 5,
+          "replacement_chars": 15,
+          "script_chars": 39,
+          "anchor_fraction": 0.01773049645390071
+        },
+        {
+          "group": "node_crypto_v19.9.0_v20.19.0_0302",
+          "old_chars": 80,
+          "anchor_chars": 7,
+          "replacement_chars": 75,
+          "script_chars": 101,
+          "anchor_fraction": 0.0875
+        },
+        {
+          "group": "node_stream_v19.9.0_v20.19.0_0016",
+          "old_chars": 306,
+          "anchor_chars": 8,
+          "replacement_chars": 128,
+          "script_chars": 155,
+          "anchor_fraction": 0.026143790849673203
+        },
+        {
+          "group": "node_stream_v19.9.0_v20.19.0_0204",
+          "old_chars": 106,
+          "anchor_chars": 11,
+          "replacement_chars": 11,
+          "script_chars": 41,
+          "anchor_fraction": 0.10377358490566038
+        },
+        {
+          "group": "node_stream_v19.9.0_v20.19.0_0248",
+          "old_chars": 250,
+          "anchor_chars": 36,
+          "replacement_chars": 47,
+          "script_chars": 102,
+          "anchor_fraction": 0.144
+        },
+        {
+          "group": "node_process_v19.9.0_v20.19.0_0076",
+          "old_chars": 183,
+          "anchor_chars": 11,
+          "replacement_chars": 3,
+          "script_chars": 33,
+          "anchor_fraction": 0.060109289617486336
+        }
+      ]
+    },
+    "dev": {
+      "question_rows": 9,
+      "independent_groups": 7,
+      "old_chars": 1043,
+      "anchor_chars": 274,
+      "replacement_chars": 1126,
+      "script_chars": 1533,
+      "median_anchor_fraction": 0.07692307692307693,
+      "whole_span_windows": 1,
+      "groups": [
+        {
+          "group": "node_http_v21.7.3_v22.14.0_0182",
+          "old_chars": 278,
+          "anchor_chars": 7,
+          "replacement_chars": 78,
+          "script_chars": 104,
+          "anchor_fraction": 0.025179856115107913
+        },
+        {
+          "group": "node_buffer_v21.7.3_v22.14.0_0051",
+          "old_chars": 182,
+          "anchor_chars": 14,
+          "replacement_chars": 134,
+          "script_chars": 167,
+          "anchor_fraction": 0.07692307692307693
+        },
+        {
+          "group": "node_buffer_v21.7.3_v22.14.0_0217",
+          "old_chars": 78,
+          "anchor_chars": 29,
+          "replacement_chars": 33,
+          "script_chars": 81,
+          "anchor_fraction": 0.3717948717948718
+        },
+        {
+          "group": "node_net_v21.7.3_v22.14.0_0133",
+          "old_chars": 147,
+          "anchor_chars": 6,
+          "replacement_chars": 106,
+          "script_chars": 131,
+          "anchor_fraction": 0.04081632653061224
+        },
+        {
+          "group": "flask_303_310_python_min",
+          "old_chars": 85,
+          "anchor_chars": 3,
+          "replacement_chars": 3,
+          "script_chars": 25,
+          "anchor_fraction": 0.03529411764705882
+        },
+        {
+          "group": "flask_c12a5d87_ab814966_0000",
+          "old_chars": 104,
+          "anchor_chars": 46,
+          "replacement_chars": 103,
+          "script_chars": 168,
+          "anchor_fraction": 0.4423076923076923
+        },
+        {
+          "group": "flask_c12a5d87_ab814966_0002",
+          "old_chars": 169,
+          "anchor_chars": 169,
+          "replacement_chars": 669,
+          "script_chars": 857,
+          "anchor_fraction": 1.0
+        }
+      ]
+    },
+    "test": {
+      "question_rows": 4,
+      "independent_groups": 4,
+      "old_chars": 1228,
+      "anchor_chars": 438,
+      "replacement_chars": 385,
+      "script_chars": 903,
+      "median_anchor_fraction": 0.6509492168960607,
+      "whole_span_windows": 0,
+      "groups": [
+        {
+          "group": "node_fs_v22.14.0_v23.11.0_0033",
+          "old_chars": 67,
+          "anchor_chars": 57,
+          "replacement_chars": 76,
+          "script_chars": 152,
+          "anchor_fraction": 0.8507462686567164
+        },
+        {
+          "group": "node_fs_v22.14.0_v23.11.0_0105",
+          "old_chars": 499,
+          "anchor_chars": 13,
+          "replacement_chars": 7,
+          "script_chars": 39,
+          "anchor_fraction": 0.026052104208416832
+        },
+        {
+          "group": "node_crypto_v22.14.0_v23.11.0_0182",
+          "old_chars": 490,
+          "anchor_chars": 222,
+          "replacement_chars": 152,
+          "script_chars": 393,
+          "anchor_fraction": 0.4530612244897959
+        },
+        {
+          "group": "node_process_v22.14.0_v23.11.0_0135",
+          "old_chars": 172,
+          "anchor_chars": 146,
+          "replacement_chars": 150,
+          "script_chars": 319,
+          "anchor_fraction": 0.8488372093023255
+        }
+      ]
+    }
+  }
+}

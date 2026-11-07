@@ -63,3 +63,16 @@ Keep `runs/v2` separate from `runs/pilot`; the two tasks have different inputs a
 The Colab notebook contains `google.colab.files` and `/content/...` paths, so use these Terminal commands on DataHub. If DataHub is congested or its assigned GPU cannot fit your selected model, upload the same `revproof.zip` and notebook to Colab and run the Colab workflow there.
 
 UCSD notes that course workspaces provide storage but busy cluster periods can lead to eviction notices. Colab also has variable GPU availability and session limits. Keep checkpoints and copied results outside a temporary runtime.
+
+## 6. Exploratory sparse-editor experiment
+
+The new [architecture plan](research/architecture_decision.md) tests a single-window edit-script objective. It predicts a unique source anchor and replacement; the program copies all text outside that anchor exactly. The v2 test has already been inspected, so `run_sparse_pilot.py` evaluates **dev only**. After uploading the latest committed project zip and using the working Blackwell environment:
+
+```bash
+cd ~/revproof
+.venv_blackwell/bin/python -m unittest discover -p 'test_*.py' -v
+.venv_blackwell/bin/python run_sparse_pilot.py --backend seq2seq --model google/flan-t5-large --output runs/sparse_flan_large --stage all
+.venv_blackwell/bin/python run_sparse_pilot.py --backend causal --model Qwen/Qwen2.5-1.5B-Instruct --output runs/sparse_qwen_1p5b --stage all
+```
+
+Each run writes `protocol.json`, `commands.jsonl`, the LoRA adapter, raw dev predictions, summaries, and `generator_table.json`. Run the FLAN condition first. Do not infer semantic correctness from exact match or literal checks; audit the actual revised text. If you use Colab Pro instead, follow `revproof_sparse_colab.ipynb` and inspect the actual GPU allocation before training.
