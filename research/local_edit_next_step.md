@@ -25,15 +25,26 @@ spans each at most 400 characters:
 
 | Split | All converted rows | Strict one-sentence, short replacement |
 | --- | ---: | ---: |
-| Train shard 00000 | 11,342 | 2,937 |
-| Development shard 00009 | 11,559 | 2,956 |
+| Train shard 00000 | 11,342 | 2,940 |
+| Development shard 00009 | 11,559 | 2,955 |
 
-Across these structurally filtered examples, an unordered-token check finds
-that roughly 58% of gold-added word occurrences also occur somewhere in the
-provided evidence (train mean 0.578, dev mean 0.579). This is **not** a factual
-support rate: paraphrases lower lexical overlap, while incidental token
-overlap inflates it. The silver labels and evidence relevance require manual
-audit. The later-period publisher gold test stays unopened.
+The table now uses the durable `fruit_local.py` converter (400-character
+maximum for both old and replacement spans), run on the 2026-11-07 local
+copies. It enforces exact reconstruction from the extracted span and rejects
+no-op spans. The earlier 2,937/2,956 feasibility counts came from a temporary
+script with slightly different parsing and have been superseded. One old
+source sentence may be replaced by multiple generated sentences; the task is
+single-*source*-sentence editing, not necessarily single-sentence output.
+
+For the retained rows, an unordered-token check of replacement words absent
+from the old sentence finds that a mean 54.4% (train) and 54.7% (dev) of
+those word occurrences also occur somewhere in the provided evidence.
+Respectively 377/2,940 and 387/2,955 rows have zero overlap by this check.
+This supersedes the temporary feasibility script's roughly 58% estimate.
+It is **not** a factual support rate: paraphrases lower lexical overlap,
+while incidental token overlap inflates it. The silver labels and evidence
+relevance require manual audit. The later-period publisher gold test stays
+unopened.
 
 ## Staged experiment
 
