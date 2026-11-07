@@ -35,13 +35,16 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--data", default="data/real_v2.jsonl")
     ap.add_argument("--output", required=True)
-    ap.add_argument("--model", default="google/flan-t5-large")
+    ap.add_argument("--backend", choices=["seq2seq", "causal"], default="seq2seq")
+    ap.add_argument("--model")
     ap.add_argument("--adapter")
     ap.add_argument("--max-new-tokens", type=int, default=384)
     ap.add_argument("--seed", type=int, default=42)
     args = ap.parse_args()
     if args.max_new_tokens < 1:
         ap.error("max-new-tokens must be positive")
+    model_name = args.model or ("google/flan-t5-large" if args.backend == "seq2seq"
+                                else "Qwen/Qwen2.5-1.5B-Instruct")
     data_hash = hashlib.sha256(Path(args.data).read_bytes()).hexdigest()
     rows = [r for r in read_records(args.data) if r["split"] == "dev"]
     if not rows or any(r["source_type"] != "real" or
@@ -51,19 +54,30 @@ def main():
         metadata = json.loads((Path(args.adapter).parent / "run.json").read_text(encoding="utf-8"))
         if (metadata["objective"] != "oracle_infill" or
                 metadata["data_sha256"] != data_hash or
-                metadata["model"] != args.model):
+                metadata["model"] != model_name or
+                metadata["backend"] != args.backend):
             raise ValueError("adapter objective, data, or model does not match oracle protocol")
 
     import torch
     torch.manual_seed(args.seed)
-    tokenizer, model = load_model(args.model, "seq2seq", args.adapter)
+    tokenizer, model = load_model(model_name, args.backend, args.adapter)
     results = []
     for row in rows:
         source = oracle_infill_prompt(row)
-        inputs = tokenizer(source, return_tensors="pt").to(next(model.parameters()).device)
+        if args.backend == "causal":
+            source = tokenizer.apply_chat_template(
+                [{"role": "user", "content": source}], tokenize=False,
+                add_generation_prompt=True)
+        inputs = tokenizer(source, return_tensors="pt",
+                           add_special_tokens=args.backend == "seq2seq")
+        inputs = inputs.to(next(model.parameters()).device)
+        kwargs = {"max_new_tokens": args.max_new_tokens, "do_sample": False}
+        if args.backend == "causal":
+            kwargs["pad_token_id"] = tokenizer.eos_token_id
         with torch.no_grad():
-            ids = model.generate(**inputs, max_new_tokens=args.max_new_tokens,
-                                 do_sample=False)
+            ids = model.generate(**inputs, **kwargs)
+        if args.backend == "causal":
+            ids = ids[:, inputs["input_ids"].shape[1]:]
         replacement = tokenizer.decode(ids[0], skip_special_tokens=True).strip()
         result = assess_infill(row, replacement)
         results.append({
@@ -87,7 +101,7 @@ def main():
         "selected_string_check_rate": sum(x["passes_string_checks"] for x in results) / n,
         "all_questions_exact_rate": sum(all(x["exact_span"] for x in group)
                                         for group in groups.values()) / len(groups),
-        "model": args.model, "adapter": args.adapter,
+        "model": model_name, "backend": args.backend, "adapter": args.adapter,
         "data_sha256": data_hash, "seed": args.seed,
         "oracle_location": True, "location_source": "gold_new_span",
         "interpretation": "Gold target locates edit; diagnostic upper bound, not deployable.",

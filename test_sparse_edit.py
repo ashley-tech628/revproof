@@ -96,9 +96,10 @@ class SparseEditTest(unittest.TestCase):
                 self.assertTrue(perfect["exact_span"])
                 self.assertTrue(perfect["exact_replacement"])
                 self.assertEqual(perfect["prediction"], row["new_span"])
-        with self.assertRaisesRegex(ValueError, "seq2seq only"):
-            encode_row(tokenizer, self.rows[0], "causal", 10000, 10000,
-                       "oracle_infill")
+        causal = encode_row(tokenizer, self.rows[0], "causal", 10000, 10000,
+                            "oracle_infill")
+        self.assertTrue(all(x == -100 for x in causal["labels"][:causal["source_tokens"]]))
+        self.assertTrue(all(x != -100 for x in causal["labels"][causal["source_tokens"]:]))
 
 
 if __name__ == "__main__":

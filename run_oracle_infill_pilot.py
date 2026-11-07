@@ -1,4 +1,4 @@
-"""Run a dev-only FLAN-T5 replacement-generation diagnostic on one GPU."""
+"""Run a dev-only oracle-location replacement diagnostic on one GPU."""
 import argparse
 import hashlib
 import json
@@ -11,7 +11,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--data", default="data/real_v2.jsonl")
     ap.add_argument("--output", required=True)
-    ap.add_argument("--model", default="google/flan-t5-large")
+    ap.add_argument("--backend", choices=["seq2seq", "causal"], default="seq2seq")
+    ap.add_argument("--model")
     ap.add_argument("--stage", choices=["prompt", "sft", "all"], default="all")
     ap.add_argument("--epochs", type=float, default=3)
     ap.add_argument("--lr", type=float, default=1e-4)
@@ -21,13 +22,15 @@ def main():
     ap.add_argument("--max-new-tokens", type=int, default=384)
     ap.add_argument("--seed", type=int, default=42)
     args = ap.parse_args()
+    model_name = args.model or ("google/flan-t5-large" if args.backend == "seq2seq"
+                                else "Qwen/Qwen2.5-1.5B-Instruct")
     root = Path(__file__).parent
     data = (root / args.data).resolve()
     output = (root / args.output).resolve()
     output.mkdir(parents=True, exist_ok=True)
     protocol = {
         "data_sha256": hashlib.sha256(data.read_bytes()).hexdigest(),
-        "model": args.model, "backend": "seq2seq", "objective": "oracle_infill",
+        "model": model_name, "backend": args.backend, "objective": "oracle_infill",
         "oracle_location": True, "location_source": "gold_new_span",
         "splits_evaluated": ["dev"],
         "interpretation": "Diagnostic upper bound with target-location leakage, not deployable.",
@@ -43,14 +46,15 @@ def main():
         raise ValueError("output contains a different protocol; choose a new directory")
     protocol_file.write_text(json.dumps(protocol, indent=2), encoding="utf-8")
     log = output / "commands.jsonl"
-    common = ["--data", data, "--model", args.model, "--seed", args.seed]
+    common = ["--data", data, "--model", model_name,
+              "--backend", args.backend, "--seed", args.seed]
     if args.stage in {"prompt", "all"}:
         run(root, log, "prompt_dev", "evaluate_oracle_infill.py", *common,
             "--max-new-tokens", args.max_new_tokens,
             "--output", output / "prompt_dev.jsonl")
     if args.stage in {"sft", "all"}:
         run(root, log, "train", "train_sparse_editor.py", *common,
-            "--backend", "seq2seq", "--objective", "oracle_infill",
+            "--objective", "oracle_infill",
             "--epochs", args.epochs, "--lr", args.lr,
             "--gradient-accumulation", args.gradient_accumulation,
             "--max-input-length", args.max_input_length,

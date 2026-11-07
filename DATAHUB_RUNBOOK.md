@@ -93,6 +93,16 @@ cd ~/revproof
 
 This writes `runs/oracle_flan_large/protocol.json`, prompt-only and LoRA dev predictions and summaries, the adapter, and `generator_table.json`. The runner records the dataset hash and refuses to reuse an output directory with a different protocol. Compare the two dev predictions per case; teacher-forced loss alone does not demonstrate successful generation. Keep this table separate from the deployable sparse-editor comparison.
 
+The [FLAN oracle diagnostic](results/oracle_flan_8007a70/ANALYSIS.md) obtained 0/9 exact dev replacements despite the gold location; 8/9 prompt and LoRA strings were identical. To check whether this is specific to FLAN-T5 on the same small dataset, run the Qwen causal condition with the **newer project zip** and a separate directory:
+
+```bash
+cd ~/revproof
+.venv_blackwell/bin/python -m unittest discover -p 'test_*.py' -v
+.venv_blackwell/bin/python run_oracle_infill_pilot.py --backend causal --model Qwen/Qwen2.5-1.5B-Instruct --output runs/oracle_qwen_1p5b --stage all
+```
+
+This Qwen condition still receives target-derived edit locations, so its dev accuracy is diagnostic only. Do not run it on the already inspected v2 test.
+
 To return a compact archive for analysis:
 
 ```bash
