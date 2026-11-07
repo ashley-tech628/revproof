@@ -6,5 +6,6 @@ data/source_verification_cache/
 data/node_source_cache/
 data/*_audit.csv
 data/train_preferences.jsonl
+results/**/selected_predictions_for_human_audit.csv
 *.zip
 .env

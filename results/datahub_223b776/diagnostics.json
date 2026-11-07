@@ -1,0 +1,116 @@
+{
+  "data_sha256": "ae9862b22dd5cb7f7733a7d4df8631551de2c660a7c6eacb45ce2fc7119df54f",
+  "diagnostic_notice": "Exact-in-candidates uses the gold reference as an oracle diagnostic, not a selector. Literal acceptance and non-exactness do not determine semantic validity.",
+  "methods": [
+    {
+      "split": "dev",
+      "method": "template",
+      "questions": 5,
+      "revision_groups": 4,
+      "selected_exact": 2,
+      "selected_literal": 2,
+      "any_exact_in_candidates": 2,
+      "literal_accept_nonexact": 0,
+      "starts_code_fence": 0
+    },
+    {
+      "split": "dev",
+      "method": "prompt",
+      "questions": 5,
+      "revision_groups": 4,
+      "selected_exact": 0,
+      "selected_literal": 0,
+      "any_exact_in_candidates": 0,
+      "literal_accept_nonexact": 0,
+      "starts_code_fence": 3
+    },
+    {
+      "split": "dev",
+      "method": "sft",
+      "questions": 5,
+      "revision_groups": 4,
+      "selected_exact": 1,
+      "selected_literal": 1,
+      "any_exact_in_candidates": 1,
+      "literal_accept_nonexact": 0,
+      "starts_code_fence": 0
+    },
+    {
+      "split": "dev",
+      "method": "prompt_filter4",
+      "questions": 5,
+      "revision_groups": 4,
+      "selected_exact": 0,
+      "selected_literal": 1,
+      "any_exact_in_candidates": 0,
+      "literal_accept_nonexact": 1,
+      "starts_code_fence": 3
+    },
+    {
+      "split": "dev",
+      "method": "sft_filter4",
+      "questions": 5,
+      "revision_groups": 4,
+      "selected_exact": 1,
+      "selected_literal": 1,
+      "any_exact_in_candidates": 1,
+      "literal_accept_nonexact": 0,
+      "starts_code_fence": 0
+    },
+    {
+      "split": "test",
+      "method": "template",
+      "questions": 4,
+      "revision_groups": 3,
+      "selected_exact": 2,
+      "selected_literal": 4,
+      "any_exact_in_candidates": 2,
+      "literal_accept_nonexact": 2,
+      "starts_code_fence": 0
+    },
+    {
+      "split": "test",
+      "method": "prompt",
+      "questions": 4,
+      "revision_groups": 3,
+      "selected_exact": 0,
+      "selected_literal": 1,
+      "any_exact_in_candidates": 0,
+      "literal_accept_nonexact": 1,
+      "starts_code_fence": 1
+    },
+    {
+      "split": "test",
+      "method": "sft",
+      "questions": 4,
+      "revision_groups": 3,
+      "selected_exact": 0,
+      "selected_literal": 2,
+      "any_exact_in_candidates": 0,
+      "literal_accept_nonexact": 2,
+      "starts_code_fence": 0
+    },
+    {
+      "split": "test",
+      "method": "prompt_filter4",
+      "questions": 4,
+      "revision_groups": 3,
+      "selected_exact": 0,
+      "selected_literal": 3,
+      "any_exact_in_candidates": 0,
+      "literal_accept_nonexact": 3,
+      "starts_code_fence": 1
+    },
+    {
+      "split": "test",
+      "method": "sft_filter4",
+      "questions": 4,
+      "revision_groups": 3,
+      "selected_exact": 0,
+      "selected_literal": 3,
+      "any_exact_in_candidates": 1,
+      "literal_accept_nonexact": 3,
+      "starts_code_fence": 0
+    }
+  ]
+}
