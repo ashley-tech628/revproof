@@ -108,6 +108,8 @@ The [FLAN oracle results](results/oracle_flan_8007a70/ANALYSIS.md) show 0/9 exac
 
 The next GPU run is paused while the [research reset](research/evidence_grounded_revision_reset.md) addresses task identifiability, evidence provenance, data scale, and evaluation. The Qwen command above remains available as a limited model-family diagnostic.
 
+The [large-data plan](research/dataset_sources.md) distinguishes FRUIT evidence-grounded examples, CoDocBench technical-domain silver revisions, and CoEdIT editing pretraining. `multispan_edit.py` adds exact-copy multi-span labels and an evidence provenance gate; external rows are not yet mixed into the v2 training/evaluation pipeline.
+
 The retrieval runner builds fixed pools with same-version distractors, evaluates BM25 and a pretrained cross-encoder, then trains the same cross-encoder on real-only pairs. DPO requires an independently completed train-candidate audit; run `run_dpo_pilot.py --audit data/sft_train_audit.csv` only after that audit. Do not treat literal pass/fail labels as human preference labels.
 
 Individual commands remain available:
