@@ -1,0 +1,66 @@
+{
+  "model": "google/flan-t5-xl",
+  "adapter": "runs/fruit_xl_gate500/adapter",
+  "dev_file_sha256": "f11fc3eeb08f5e7207a0da0f1515da3f45379b7aae37244da8606c20fa8d6259",
+  "max_dev_rows": 30,
+  "max_input_length": 1024,
+  "max_target_length": 384,
+  "dev_ids": [
+    14495178,
+    42537016,
+    828663,
+    65565,
+    93278,
+    45244123,
+    61471506,
+    910997,
+    47181067,
+    38945099,
+    39510164,
+    110989,
+    49854374,
+    1097662,
+    47804210,
+    42923480,
+    54299574,
+    20838352,
+    435802,
+    938757,
+    2969841,
+    23556579,
+    1779594,
+    56999496,
+    48947837,
+    43064911,
+    37875939,
+    1259024,
+    9207111
+  ],
+  "conditions": {
+    "copy": {
+      "n": 29,
+      "exact": 0,
+      "lcs_f1": 0.7836230414867541,
+      "addition_f1": 0.0,
+      "changed": 0,
+      "reconstruction_valid": 29
+    },
+    "base": {
+      "n": 29,
+      "exact": 0,
+      "lcs_f1": 0.14654802387840604,
+      "addition_f1": 0.019084108739281153,
+      "changed": 28,
+      "reconstruction_valid": 28
+    },
+    "editor": {
+      "n": 29,
+      "exact": 0,
+      "lcs_f1": 0.7228358875396134,
+      "addition_f1": 0.04210695597656313,
+      "changed": 12,
+      "reconstruction_valid": 28
+    }
+  },
+  "warning": "Silver dev and token-overlap scores do not establish factual support; audit predictions."
+}
