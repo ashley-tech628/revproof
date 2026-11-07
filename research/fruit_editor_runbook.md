@@ -34,6 +34,42 @@ Upload `revproof_fruit_pilot.zip` to `~`, then run in the existing 1-GPU
 environment. The zip contains code and this runbook, **not** the external
 dataset or adapters.
 
+### Storage preflight before downloading the 3B model
+
+The official `google/flan-t5-xl` safetensors shards are 9.45 GB and 1.95 GB.
+Four-bit quantization occurs while loading and does not shrink those source
+downloads. A 2026-11-06 DataHub pilot failed at download with `OSError: [Errno
+122] Disk quota exceeded`; no training or evaluation occurred. UCSD DataHub
+documents separate quotas for course home and `~/private` (personal storage).
+Check the [DataHub Disk Quota Service](https://datahub.ucsd.edu/services/disk-quota-service)
+and inspect actual usage before retrying. Do not assume `df` reports your
+personal quota.
+
+```bash
+cd ~/revproof
+du -sh ~/.cache/huggingface/hub/models--google--flan-t5-xl ~/.cache/huggingface/xet ~/revproof 2>/dev/null
+readlink -f ~/private
+df -h ~ ~/private /tmp
+```
+
+If personal storage has sufficient headroom (plan for roughly 25 GB to allow
+downloads and temporary files), route both Hugging Face cache and temporary
+files there **before** starting Python. Repeat the exports in each new
+terminal. This is a storage recommendation, not a guarantee of available
+quota; use the service to check.
+
+```bash
+mkdir -p "$HOME/private/hf_cache" "$HOME/private/tmp"
+export HF_HOME="$HOME/private/hf_cache"
+export TMPDIR="$HOME/private/tmp"
+```
+
+The interrupted default-cache copy may still consume course quota. Inspect
+its exact size/path before deleting it. Preserve other model caches and all
+experiment outputs. If neither storage pool has enough quota, request more
+course storage through the instructor/TA or run the pilot on a runtime with
+adequate disk; switching the model to 4-bit does not solve download quota.
+
 ```bash
 cd ~/revproof
 unzip -o ~/revproof_fruit_pilot.zip
