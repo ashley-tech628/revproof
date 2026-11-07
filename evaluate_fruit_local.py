@@ -6,25 +6,41 @@ result. Lexical metrics are diagnostics; factual support needs manual audit.
 """
 
 import argparse
+from collections import Counter
 import hashlib
 import json
 from pathlib import Path
 
-from evaluate_fruit_gate import addition_f1, lcs_f1
+from evaluate_fruit_gate import lcs_f1, words
 from fruit_local import choose, load, prompt, reconstruct
 from train_fruit_local import encode
+
+
+def edit_content_f1(old, prediction, gold):
+    """Unordered addition+deletion token F1; not a factual-support metric."""
+    source = Counter(words(old))
+    predicted = Counter(words(prediction))
+    reference = Counter(words(gold))
+    pred_added, gold_added = predicted - source, reference - source
+    pred_deleted, gold_deleted = source - predicted, source - reference
+    matched = sum((pred_added & gold_added).values()) + sum(
+        (pred_deleted & gold_deleted).values())
+    pred_edits = sum(pred_added.values()) + sum(pred_deleted.values())
+    gold_edits = sum(gold_added.values()) + sum(gold_deleted.values())
+    return 2 * matched / (pred_edits + gold_edits) if pred_edits + gold_edits else 1.0
 
 
 def score(row, replacement):
     if not replacement:
         return {"valid": False, "replacement_exact": False,
                 "full_exact": False, "replacement_lcs_f1": 0.0,
-                "added_token_f1": 0.0, "changed": False}
+                "edit_content_f1": 0.0, "changed": False}
     full = reconstruct(row, replacement)
     return {"valid": True, "replacement_exact": replacement == row["replacement"],
             "full_exact": full == row["gold"],
             "replacement_lcs_f1": lcs_f1(replacement, row["replacement"]),
-            "added_token_f1": addition_f1(row["old"], replacement, row["replacement"]),
+            "edit_content_f1": edit_content_f1(row["old"], replacement,
+                                               row["replacement"]),
             "changed": replacement != row["old"]}
 
 
@@ -46,7 +62,7 @@ def summary(items, name):
             "valid": sum(x["valid"] for x in scores),
             "changed": sum(x["changed"] for x in scores),
             "mean_replacement_lcs_f1": sum(x["replacement_lcs_f1"] for x in scores) / n,
-            "mean_added_token_f1": sum(x["added_token_f1"] for x in scores) / n}
+            "mean_edit_content_f1": sum(x["edit_content_f1"] for x in scores) / n}
 
 
 def main():

@@ -71,6 +71,8 @@ cat runs/fruit_local_control120_compare/summary.json
 If exact replacements stay near zero on these eight overlapping rows, stop.
 Inspect `predictions.jsonl`, prompt and target serialization, adapter loading,
 and decoding before more GPU steps. Training loss alone is insufficient.
+The 2026-11-07 user run obtained 4/8 exact versus 0/8 for copy and base;
+this clears the basic mechanics check but is only partial memorization.
 
 ## Phase 3: held-out gate, only after Phase 2 works
 
@@ -98,7 +100,7 @@ cat runs/fruit_local_gate500_compare/summary.json
 Report paired copy/base/editor results on exactly the same token-eligible
 development IDs. Inspect their replacement texts and manually adjudicate
 whether newly asserted facts are supported. `replacement_exact`, `full_exact`,
-word LCS, and added-token F1 are silver-reference diagnostics only. The
+word LCS, and edit-content token F1 are silver-reference diagnostics only. The
 `full_exact` result here receives the oracle location, so it cannot be
 compared as an end-to-end score with the earlier unrestricted article task.
 If this stage works, the next experiment learns to locate the sentence and

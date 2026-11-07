@@ -1,6 +1,6 @@
 import unittest
 
-from evaluate_fruit_local import score
+from evaluate_fruit_local import edit_content_f1, score
 from fruit_data import normalize_fruit
 from fruit_local import extract, prompt, reconstruct
 
@@ -61,6 +61,11 @@ class FruitLocalTest(unittest.TestCase):
         self.assertEqual(score(local, "Old.")["replacement_exact"], False)
         self.assertEqual(reconstruct(local, "Different."),
                          "Before. Different. After.")
+
+    def test_edit_content_counts_deletions_without_copy_credit(self):
+        self.assertEqual(edit_content_f1("A B C", "A B C", "A B"), 0)
+        self.assertEqual(edit_content_f1("A B C", "A B", "A B"), 1)
+        self.assertEqual(edit_content_f1("A B", "A C", "A C"), 1)
 
 
 if __name__ == "__main__":
