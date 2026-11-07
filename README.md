@@ -106,6 +106,8 @@ The sparse pilot results are analyzed in [results/sparse_15c6e2f/ANALYSIS.md](re
 
 The [FLAN oracle results](results/oracle_flan_8007a70/ANALYSIS.md) show 0/9 exact dev replacements. A matched Qwen causal condition is available via `run_oracle_infill_pilot.py --backend causal --model Qwen/Qwen2.5-1.5B-Instruct --output runs/oracle_qwen_1p5b --stage all`; it remains a target-location-leaking diagnostic.
 
+The next GPU run is paused while the [research reset](research/evidence_grounded_revision_reset.md) addresses task identifiability, evidence provenance, data scale, and evaluation. The Qwen command above remains available as a limited model-family diagnostic.
+
 The retrieval runner builds fixed pools with same-version distractors, evaluates BM25 and a pretrained cross-encoder, then trains the same cross-encoder on real-only pairs. DPO requires an independently completed train-candidate audit; run `run_dpo_pilot.py --audit data/sft_train_audit.csv` only after that audit. Do not treat literal pass/fail labels as human preference labels.
 
 Individual commands remain available:

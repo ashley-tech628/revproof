@@ -1,5 +1,7 @@
 # RevProof architecture decision after the v2 pilot
 
+**Update (2026-11-06):** The subsequent sparse-script and oracle-location runs did not improve exact editing. See [the research reset](evidence_grounded_revision_reset.md) for the revised data, model, and evaluation plan. The proposed experiments below are historical plans, not endorsed results.
+
 Date: 2026-11-06. This is an experiment plan, not a measured improvement.
 
 ## Evidence from the current pilot

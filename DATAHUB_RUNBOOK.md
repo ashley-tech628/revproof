@@ -95,6 +95,8 @@ This writes `runs/oracle_flan_large/protocol.json`, prompt-only and LoRA dev pre
 
 The [FLAN oracle diagnostic](results/oracle_flan_8007a70/ANALYSIS.md) obtained 0/9 exact dev replacements despite the gold location; 8/9 prompt and LoRA strings were identical. To check whether this is specific to FLAN-T5 on the same small dataset, run the Qwen causal condition with the **newer project zip** and a separate directory:
 
+**Research update:** [The literature and failure analysis](research/evidence_grounded_revision_reset.md) now recommends pausing this Qwen run until the training positive control, evidence provenance, and evaluation set are repaired. The command remains here only as a reproducible optional diagnostic.
+
 ```bash
 cd ~/revproof
 .venv_blackwell/bin/python -m unittest discover -p 'test_*.py' -v
