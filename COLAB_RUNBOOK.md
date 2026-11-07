@@ -1,6 +1,6 @@
 # Running RevProof on Colab
 
-For the new sparse-editor experiment, open **`revproof_sparse_colab.ipynb`** in Google Colab, choose **Runtime → Change runtime type → GPU**, and run cells in order. Generate the current `revproof.zip` from committed files with `python work/package_revproof.py` in the local workspace, then upload it when prompted. The notebook checks the assigned GPU, installs model dependencies, runs the 16 local contract tests, and trains/evaluates the FLAN-T5-large and Qwen edit-script conditions on dev. Download outputs before the ephemeral runtime ends. `revproof_colab.ipynb` is the historical v1 workflow.
+For the historical sparse-editor experiment, open **`notebooks/revproof_sparse_colab.ipynb`** in Google Colab, choose **Runtime → Change runtime type → GPU**, and run cells in order. Generate the current `revproof.zip` from committed files with `python work/package_revproof.py` in the local workspace, then upload it when prompted. The notebook checks the assigned GPU, installs model dependencies, runs the 16 local contract tests, and trains/evaluates the FLAN-T5-large and Qwen edit-script conditions on dev. Download outputs before the ephemeral runtime ends. `notebooks/revproof_colab.ipynb` is the historical v1 workflow. The current experiment uses DataHub; see `research/datahub_span_editor.md`.
 
 Before preparing real data, the optional toy GPU smoke cell can test QLoRA model loading, training, adapter saving, and inference. It uses four fictional training rows and is never a research result.
 

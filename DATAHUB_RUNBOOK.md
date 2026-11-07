@@ -75,7 +75,7 @@ cd ~/revproof
 .venv_blackwell/bin/python run_sparse_pilot.py --backend causal --model Qwen/Qwen2.5-1.5B-Instruct --output runs/sparse_qwen_1p5b --stage all
 ```
 
-Each run writes `protocol.json`, `commands.jsonl`, the LoRA adapter, raw dev predictions, summaries, and `generator_table.json`. Run the FLAN condition first. Do not infer semantic correctness from exact match or literal checks; audit the actual revised text. If you use Colab Pro instead, follow `revproof_sparse_colab.ipynb` and inspect the actual GPU allocation before training.
+Each run writes `protocol.json`, `commands.jsonl`, the LoRA adapter, raw dev predictions, summaries, and `generator_table.json`. Run the FLAN condition first. Do not infer semantic correctness from exact match or literal checks; audit the actual revised text. If you use Colab Pro instead, follow `notebooks/revproof_sparse_colab.ipynb` and inspect the actual GPU allocation before training. For the current span-editor experiment, use `research/datahub_span_editor.md`.
 
 ## 7. Oracle-location infilling diagnostic
 
