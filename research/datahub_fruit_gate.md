@@ -36,11 +36,11 @@ DataHub.
 
 ## Install updated experiment code
 
-Upload `revproof_fruit_datahub_gate.zip` into `~/revproof`, then:
+Upload `revproof_fruit_datahub_progress.zip` into your DataHub home, then:
 
 ```bash
 cd ~/revproof
-unzip -o revproof_fruit_datahub_gate.zip
+unzip -o ~/revproof_fruit_datahub_progress.zip -d ~/revproof
 .venv_blackwell/bin/python -m unittest test_fruit_data.py test_fruit_gate.py -v
 test -s data/fruit/train_00000.jsonl
 test -s data/fruit/dev_00009.jsonl
@@ -64,10 +64,13 @@ ID hash; 30 are selected before token-length filtering.
 ```bash
 set -o pipefail
 mkdir -p runs
-.venv_blackwell/bin/python -u train_fruit_editor.py --train data/fruit/train_00000.jsonl --dev data/fruit/dev_00009.jsonl --model google/flan-t5-xl --max-train-rows 2000 --max-dev-rows 30 --max-steps 500 --stage train --output runs/fruit_xl_gate500 2>&1 | tee runs/fruit_xl_gate500_train.log
+.venv_blackwell/bin/python -u train_fruit_editor.py --train data/fruit/train_00000.jsonl --dev data/fruit/dev_00009.jsonl --model google/flan-t5-xl --max-train-rows 2000 --max-dev-rows 30 --max-steps 500 --logging-steps 5 --progress-every 100 --stage train --output runs/fruit_xl_gate500 2>&1 | tee runs/fruit_xl_gate500_train.log
 ```
 
-The adapter and Trainer checkpoint are
+The script now reports tokenization every 100 selected rows, model-loading
+phases, and training loss every 5 optimizer steps. The first 11.4 GB download
+is still dependent on network and storage speed. The adapter and Trainer
+checkpoint are
 saved under `runs/fruit_xl_gate500`. Then run paired evaluation:
 
 ```bash

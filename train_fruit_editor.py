@@ -42,6 +42,18 @@ def encode(tokenizer, row, max_input, max_target):
     return {"input_ids": src, "attention_mask": [1] * len(src), "labels": tgt}
 
 
+def encode_rows(tokenizer, rows, max_input, max_target, label, progress_every):
+    pairs = []
+    for index, row in enumerate(rows, 1):
+        encoded = encode(tokenizer, row, max_input, max_target)
+        if encoded is not None:
+            pairs.append((row, encoded))
+        if index == 1 or index % progress_every == 0 or index == len(rows):
+            print(f"ENCODE {label}: {index}/{len(rows)} rows, "
+                  f"{len(pairs)} within token limits", flush=True)
+    return pairs
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--train", nargs="+", required=True, type=Path)
@@ -54,12 +66,15 @@ def main():
     ap.add_argument("--max-input-length", type=int, default=1024)
     ap.add_argument("--max-target-length", type=int, default=384)
     ap.add_argument("--max-steps", type=int, default=1000)
+    ap.add_argument("--logging-steps", type=int, default=25)
+    ap.add_argument("--progress-every", type=int, default=250)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--positive-control", action="store_true")
     ap.add_argument("--resume", type=Path, help="resume a same-protocol Trainer checkpoint")
     args = ap.parse_args()
-    if args.max_steps < 1 or args.max_input_length < 1 or args.max_target_length < 1:
-        ap.error("steps and token limits must be positive")
+    if min(args.max_steps, args.max_input_length, args.max_target_length,
+           args.logging_steps, args.progress_every) < 1:
+        ap.error("steps, progress interval, and token limits must be positive")
     if args.max_train_rows is not None and args.max_train_rows < 1:
         ap.error("max-train-rows must be positive")
     if args.max_dev_rows is not None and args.max_dev_rows < 1:
@@ -83,13 +98,14 @@ def main():
     if args.positive_control:
         train = sorted(train, key=lambda x: len(x["input"]) + len(x["target"]))[:8]
         dev = train
+    print(f"LOAD TOKENIZER: {args.model}", flush=True)
     tokenizer = AutoTokenizer.from_pretrained(args.model)
-    train_pairs = [(row, enc) for row in train if
-                   (enc := encode(tokenizer, row, args.max_input_length,
-                                  args.max_target_length)) is not None]
-    dev_pairs = [(row, enc) for row in dev if
-                 (enc := encode(tokenizer, row, args.max_input_length,
-                                args.max_target_length)) is not None]
+    train_pairs = encode_rows(tokenizer, train, args.max_input_length,
+                             args.max_target_length, "train",
+                             args.progress_every)
+    dev_pairs = encode_rows(tokenizer, dev, args.max_input_length,
+                           args.max_target_length, "dev",
+                           args.progress_every)
     if not train_pairs or not dev_pairs:
         raise ValueError("token limits exclude every training or development row")
     output = args.output
@@ -102,21 +118,27 @@ def main():
                 "file_sha256": hashes, "train_count": len(train_pairs),
                 "dev_count": len(dev_pairs), "max_steps": args.max_steps,
                 "max_input_length": args.max_input_length,
-                "max_target_length": args.max_target_length, "seed": args.seed}
+                "max_target_length": args.max_target_length,
+                "logging_steps": args.logging_steps, "seed": args.seed}
     path = output / "protocol.json"
     if path.exists() and json.loads(path.read_text(encoding="utf-8")) != protocol:
         raise ValueError("output directory already has a different protocol")
     path.write_text(json.dumps(protocol, indent=2), encoding="utf-8")
     print(json.dumps({"selected_train": len(train), "eligible_train": len(train_pairs),
-                      "selected_dev": len(dev), "eligible_dev": len(dev_pairs)}))
+                      "selected_dev": len(dev), "eligible_dev": len(dev_pairs)}),
+          flush=True)
 
     bf16 = torch.cuda.is_bf16_supported()
     quant = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
                               bnb_4bit_use_double_quant=True,
                               bnb_4bit_compute_dtype=torch.bfloat16 if bf16 else torch.float16)
+    print(f"LOAD MODEL: {args.model} in 4-bit; first download can take time",
+          flush=True)
     model = AutoModelForSeq2SeqLM.from_pretrained(args.model,
                                                   quantization_config=quant,
                                                   device_map="auto")
+    print(f"MODEL READY: CUDA allocated "
+          f"{torch.cuda.memory_allocated() / 2**30:.2f} GiB", flush=True)
     if args.stage in {"train", "all"}:
         model = prepare_model_for_kbit_training(model)
         model = get_peft_model(model, LoraConfig(
@@ -126,7 +148,8 @@ def main():
         settings = TrainingArguments(
             output_dir=str(output / "checkpoints"), max_steps=args.max_steps,
             per_device_train_batch_size=1, gradient_accumulation_steps=4,
-            learning_rate=1e-4, logging_steps=25, save_strategy="steps",
+            learning_rate=1e-4, logging_steps=args.logging_steps,
+            save_strategy="steps",
             save_steps=min(500, args.max_steps), save_total_limit=2,
             report_to="none", remove_unused_columns=False, seed=args.seed,
             gradient_checkpointing=True,
@@ -137,6 +160,10 @@ def main():
             train_dataset=[encoded for _, encoded in train_pairs],
             data_collator=DataCollatorForSeq2Seq(tokenizer, model=model),
             processing_class=tokenizer)
+        print(f"START TRAINING: {args.max_steps} steps; "
+              f"loss every {args.logging_steps} steps; "
+              f"checkpoint every {min(500, args.max_steps)} steps",
+              flush=True)
         metrics = trainer.train(
             resume_from_checkpoint=str(args.resume) if args.resume else None).metrics
         trainer.save_model(str(output / "adapter"))
