@@ -7,7 +7,16 @@ FRUIT-WIKI silver examples. The small source-audited Node.js/Flask set is a
 separate technical-domain pilot. Neither silver exact match nor string
 overlap establishes factual support.
 
-## Current experiment: reference-planned span editor v2
+## Current experiment: boundary refinement v3
+
+The [v3 DataHub runbook](research/datahub_span_v3.md) trains one RoBERTa
+classifier to score complete character-span boundaries around existing QA
+proposals. It reuses the v2 evidence selector and FLAN-T5-XL infiller, then
+compares v2 and v3 on a newly frozen 100-row development slice. V3 is code
+and a protocol, not a measured improvement yet. The later-period gold test
+remains untouched.
+
+## Completed experiment: reference-planned span editor v2
 
 The [v2 DataHub runbook](research/datahub_span_v2.md) gives the new training
 and paired evaluation commands. It trains a sentence/evidence selector on
@@ -60,8 +69,9 @@ publisher examples, and silver exact match is not factual support.
 
 | Location | Purpose |
 | --- | --- |
-| [`span_editor/`](span_editor/) and [`fruit_span.py`](fruit_span.py) | V1 and v2 locator, infiller and copy-constrained evaluation |
-| [`research/datahub_span_v2.md`](research/datahub_span_v2.md) | Current DataHub v2 setup and commands |
+| [`span_editor/`](span_editor/) and [`fruit_span.py`](fruit_span.py) | V1–v3 locator, boundary ranker, infiller and copy-constrained evaluation |
+| [`research/datahub_span_v3.md`](research/datahub_span_v3.md) | Current v3 DataHub training and paired evaluation commands |
+| [`research/datahub_span_v2.md`](research/datahub_span_v2.md) | Completed v2 DataHub setup and commands |
 | [`research/datahub_span_editor.md`](research/datahub_span_editor.md) | V1 setup, commands and protocol |
 | [`research/README.md`](research/README.md) | Research decisions and experiment history |
 | [`results/README.md`](results/README.md) | Archived output index; training artifacts are excluded |

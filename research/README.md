@@ -16,6 +16,9 @@
 - [Span-editor v2 paired result analysis](../results/span_v2_frozen_dev/ANALYSIS.md):
   v1 9/100, v2 forced 20/100 and v2 gated 17/100 on the same newly inspected
   FRUIT silver development IDs; breakdown of remaining failures.
+- [DataHub span-editor v3 runbook](datahub_span_v3.md): train a complete-span
+  boundary ranker, screen candidate recall on inspected examples, and pair
+  v2/v3 on a new frozen development slice. No v3 accuracy result exists yet.
 - [Local-editor case analysis](fruit_local_gate500_analysis.md): the completed
   500-step oracle-locus experiment and provisional human review that motivate
   the new target.

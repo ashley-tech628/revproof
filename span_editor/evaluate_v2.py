@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 
 from fruit_span import prompt
+from span_editor.boundary_v3 import propose as propose_boundary_v3
 from span_editor.common import sha256, write_json
 from span_editor.evaluate import generate, make_prediction, summarize
 from span_editor.locator import locate_sentence_candidates
@@ -68,6 +69,8 @@ def main():
     parser.add_argument("--selector", type=Path, required=True)
     parser.add_argument("--locator", type=Path, required=True)
     parser.add_argument("--adapter", type=Path, required=True)
+    parser.add_argument("--boundary", type=Path,
+                        help="trained v3 boundary model; enables v3 proposals")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--max-source-sentences", type=int, default=4)
     parser.add_argument("--top-pairs", type=int, default=6)
@@ -78,6 +81,9 @@ def main():
     parser.add_argument("--min-selector-prob", type=float, default=0.5)
     parser.add_argument("--min-span-score", type=float, default=0.0)
     parser.add_argument("--locator-weight", type=float, default=0.1)
+    parser.add_argument("--boundary-radius", type=int, default=3)
+    parser.add_argument("--boundary-variants", type=int, default=36)
+    parser.add_argument("--boundary-per-pair", type=int, default=2)
     args = parser.parse_args()
     if min(args.max_source_sentences, args.top_pairs, args.top_spans,
            args.max_candidates, args.max_span_chars,
@@ -85,10 +91,15 @@ def main():
         parser.error("candidate limits must be positive")
     if not 0 <= args.min_selector_prob <= 1 or args.locator_weight < 0:
         parser.error("invalid selector probability or locator weight")
+    if min(args.boundary_radius, args.boundary_variants,
+           args.boundary_per_pair) < 1:
+        parser.error("boundary limits must be positive")
     protocols = {}
     expected = {"selector": "reference_supervised_sentence_evidence_selector",
                 "locator": "evidence_item_span_locator_v2",
                 "adapter": "reference_conditioned_span_infiller_v2"}
+    if args.boundary:
+        expected["boundary"] = "evidence_conditioned_boundary_ranker_v3"
     for name in expected:
         path = getattr(args, name)
         file = path.parent / "protocol.json"
@@ -101,6 +112,9 @@ def main():
             parser.error(f"{name} role or development data hash mismatch")
     if len({p["train_sha256"] for p in protocols.values()}) != 1:
         parser.error("components were trained on different data versions")
+    if args.boundary and (args.boundary_radius != protocols["boundary"]["radius"] or
+                          args.max_span_chars != protocols["boundary"]["max_span_chars"]):
+        parser.error("boundary proposal settings differ from ranker training")
     frozen = json.loads(args.ids_file.read_text(encoding="utf-8"))
     ids = frozen["ids"]
     if (frozen.get("role") != "future_development_slice_not_yet_evaluated" or
@@ -111,7 +125,8 @@ def main():
         parser.error("frozen ID missing from development file")
     rows = [by_id[i] for i in ids]
 
-    run_protocol = {"role": "frozen_silver_span_v2", "ids": ids,
+    run_protocol = {"role": "frozen_silver_span_v3" if args.boundary else
+                    "frozen_silver_span_v2", "ids": ids,
                     "frozen_ids_sha256": sha256(args.ids_file),
                     "dev_sha256": sha256(args.data),
                     "models": {name: str(getattr(args, name)) for name in expected},
@@ -124,7 +139,11 @@ def main():
                                  "infiller_evidence_items": args.infiller_evidence_items,
                                  "min_selector_prob": args.min_selector_prob,
                                  "min_span_score": args.min_span_score,
-                                 "locator_weight": args.locator_weight}}
+                                 "locator_weight": args.locator_weight,
+                                 **({"boundary_radius": args.boundary_radius,
+                                     "boundary_variants": args.boundary_variants,
+                                     "boundary_per_pair": args.boundary_per_pair}
+                                    if args.boundary else {})}}
     args.output.mkdir(parents=True, exist_ok=True)
     protocol_file = args.output / "evaluation_protocol.json"
     if protocol_file.exists():
@@ -163,6 +182,11 @@ def main():
     locator_tokenizer = AutoTokenizer.from_pretrained(str(args.locator), use_fast=True)
     locator = AutoModelForQuestionAnswering.from_pretrained(
         str(args.locator)).to("cuda").eval()
+    if args.boundary:
+        boundary_tokenizer = AutoTokenizer.from_pretrained(
+            str(args.boundary), use_fast=True)
+        boundary = AutoModelForSequenceClassification.from_pretrained(
+            str(args.boundary)).to("cuda").eval()
     model_name = protocols["adapter"]["model"]
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     bf16 = torch.cuda.is_bf16_supported()
@@ -179,11 +203,23 @@ def main():
             predictions.append(completed[n - 1])
             continue
         source = inference_view(gold)
-        pairs = rank_pairs(selector, selector_tokenizer, source, torch,
-                           args.max_source_sentences, args.top_pairs,
-                           protocols["selector"]["max_length"])
+        if args.boundary:
+            pairs, locations_v3 = propose_boundary_v3(
+                boundary, boundary_tokenizer, selector, selector_tokenizer,
+                locator, locator_tokenizer, source, torch,
+                protocols["selector"]["max_length"],
+                protocols["locator"]["max_length"],
+                protocols["boundary"]["max_length"],
+                args.max_source_sentences, args.top_pairs, args.top_spans,
+                args.boundary_radius, args.boundary_variants,
+                args.max_candidates, args.max_span_chars,
+                args.boundary_per_pair)
+        else:
+            pairs = rank_pairs(selector, selector_tokenizer, source, torch,
+                               args.max_source_sentences, args.top_pairs,
+                               protocols["selector"]["max_length"])
         candidates = []
-        for pair_rank, pair in enumerate(pairs):
+        for pair_rank, pair in enumerate(pairs if not args.boundary else ()):
             if len(candidates) >= args.max_candidates:
                 break
             evidence_id = pair["evidence_id"]
@@ -219,6 +255,31 @@ def main():
                                    "pair_rank": pair_rank, "span_rank": span_rank,
                                    "phrase": phrase, "checks": checks,
                                    "rank_score": rank_score})
+        if args.boundary:
+            for location in locations_v3:
+                pair = pairs[location["pair_rank"]]
+                evidence_id = location["evidence_id"]
+                sentence_index = location["sentence_index"]
+                evidence_ids, evidence = evidence_for_candidate(
+                    source, pair, pairs, args.infiller_evidence_items)
+                context = source["source_sentences"]
+                draft = {"old": context[sentence_index],
+                         "previous": context[sentence_index - 1]
+                         if sentence_index else "",
+                         "next": context[sentence_index + 1]
+                         if sentence_index + 1 < len(context) else "",
+                         "evidence": evidence}
+                phrase = generate(editor, tokenizer,
+                                  prompt(draft, location["start"],
+                                         location["end"]),
+                                  protocols["adapter"]["max_input_length"],
+                                  protocols["adapter"]["max_target_length"], torch)
+                checks = phrase_checks(phrase, location["old_span"], evidence,
+                                       context[sentence_index], args.max_span_chars)
+                candidates.append({**location,
+                                   "infiller_evidence_ids": evidence_ids,
+                                   "phrase": phrase, "checks": checks,
+                                   "rank_score": location["proposal_score"]})
         forced, gated = choose_candidate(candidates, args.min_selector_prob,
                                          args.min_span_score)
         def prediction(candidate):
@@ -236,6 +297,7 @@ def main():
         oracle = make_prediction(gold, gold["edit_index"], gold["span_start"],
                                  gold["span_end"], oracle_phrase,
                                  args.max_span_chars)
+        prefix = "v3" if args.boundary else "v2"
         result = {"id": gold["id"], "source": gold["source"],
                             "evidence": gold["evidence"], "gold_full": gold["gold"],
                             "gold_sentence_index": gold["edit_index"],
@@ -244,24 +306,25 @@ def main():
                             "gold_new_span": gold["new_span"],
                             "gold_reference_ids": gold["reference_ids"],
                             "ranked_pairs": pairs, "candidates": candidates,
-                            "v2_oracle_gold_location_and_references": oracle,
-                            "v2_forced": prediction(forced),
-                            "v2_gated": prediction(gated)}
+                            f"{prefix}_oracle_gold_location_and_references": oracle,
+                            f"{prefix}_forced": prediction(forced),
+                            f"{prefix}_gated": prediction(gated)}
         file = row_dir / f"{n - 1:04d}.json"
         temporary = file.with_suffix(".json.tmp")
         temporary.write_text(json.dumps(result, ensure_ascii=False), encoding="utf-8")
         temporary.replace(file)
         predictions.append(result)
-        print(f"V2 EVALUATE: {n}/{len(rows)}; pairs={len(pairs)}; "
+        print(f"{prefix.upper()} EVALUATE: {n}/{len(rows)}; pairs={len(pairs)}; "
               f"candidates={len(candidates)}", flush=True)
     with (args.output / "predictions.jsonl").open("w", encoding="utf-8") as stream:
         for item in predictions:
             stream.write(json.dumps(item, ensure_ascii=False) + "\n")
+    prefix = "v3" if args.boundary else "v2"
     report = {k: v for k, v in run_protocol.items() if k != "model_protocols"}
     report.update({
               "conditions": {name: summarize(predictions, name)
-                             for name in ("v2_oracle_gold_location_and_references",
-                                          "v2_forced", "v2_gated")},
+                             for name in (f"{prefix}_oracle_gold_location_and_references",
+                                          f"{prefix}_forced", f"{prefix}_gated")},
               "candidate_diagnostics": {
                   "silver_reference_pair_at_k": sum(any(
                       p["sentence_index"] == x["gold_sentence_index"] and
