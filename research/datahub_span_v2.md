@@ -137,6 +137,9 @@ values before investing in a full infiller run. Top-k recall is easier than
 v1's top-1 exact span result, so this is only a preliminary screen: a generated
 phrase and final candidate ranking can still fail. If candidate recall is low, send
 the probe summary for analysis before running the next training command.
+The probe uses the same eight-candidate budget as the final evaluator;
+the earlier probe version without this cap measured up to 18 candidates
+and must not be used as the eight-candidate result.
 
 ```bash
 cd ~/revproof

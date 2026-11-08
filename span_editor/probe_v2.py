@@ -26,8 +26,10 @@ def main():
     parser.add_argument("--top-sentences", type=int, default=4)
     parser.add_argument("--top-pairs", type=int, default=6)
     parser.add_argument("--top-spans", type=int, default=3)
+    parser.add_argument("--max-candidates", type=int, default=8)
     args = parser.parse_args()
-    if min(args.top_sentences, args.top_pairs, args.top_spans) < 1:
+    if min(args.top_sentences, args.top_pairs, args.top_spans,
+           args.max_candidates) < 1:
         parser.error("top-k values must be positive")
     seen = json.loads(args.seen_summary.read_text(encoding="utf-8"))
     if seen.get("role") != "held_out_silver_span_edit":
@@ -77,12 +79,16 @@ def main():
                            protocols["selector"]["max_length"])
         candidates = []
         for pair in pairs:
+            if len(candidates) >= args.max_candidates:
+                break
             local = {**source, "evidence": source["evidence_items"][pair["evidence_id"]]}
-            candidates.extend({**candidate, "evidence_id": pair["evidence_id"]}
-                              for candidate in locate_sentence_candidates(
-                                  locator, locator_tokenizer, local,
-                                  pair["sentence_index"], torch,
-                                  protocols["locator"]["max_length"], args.top_spans))
+            locations = locate_sentence_candidates(
+                locator, locator_tokenizer, local, pair["sentence_index"],
+                torch, protocols["locator"]["max_length"], args.top_spans)
+            for candidate in locations:
+                if len(candidates) >= args.max_candidates:
+                    break
+                candidates.append({**candidate, "evidence_id": pair["evidence_id"]})
         details.append({"id": identifier,
                         "gold_sentence_in_pairs": any(
                             x["sentence_index"] == gold["edit_index"] for x in pairs),
@@ -104,6 +110,7 @@ def main():
               "dev_sha256": sha256(args.data),
               "top_sentences": args.top_sentences, "top_pairs": args.top_pairs,
               "top_spans": args.top_spans,
+              "max_candidates": args.max_candidates,
               "gold_sentence_in_pairs": sum(x["gold_sentence_in_pairs"] for x in details),
               "silver_reference_pair_in_pairs": sum(
                   x["silver_reference_pair_in_pairs"] for x in details),
