@@ -76,6 +76,46 @@ def best_span(start_logits, end_logits, offsets, context_tokens, max_tokens=32):
     return best
 
 
+def top_spans(start_logits, end_logits, offsets, context_tokens, top_k=3,
+              max_tokens=32):
+    """Distinct character boundaries ranked by null-relative QA score."""
+    null = float(start_logits[0] + end_logits[0])
+    starts = sorted(context_tokens, key=lambda i: float(start_logits[i]), reverse=True)[:30]
+    ends = sorted(context_tokens, key=lambda i: float(end_logits[i]), reverse=True)[:30]
+    by_boundary = {}
+    for i in starts:
+        for j in ends:
+            if not i <= j or j - i + 1 > max_tokens:
+                continue
+            a, b = offsets[i][0], offsets[j][1]
+            if a >= b:
+                continue
+            score = float(start_logits[i] + end_logits[j] - null)
+            by_boundary[(a, b)] = max(score, by_boundary.get((a, b), float("-inf")))
+    return sorted(((score, a, b) for (a, b), score in by_boundary.items()),
+                  key=lambda x: (-x[0], x[1], x[2]))[:top_k]
+
+
+def locate_sentence_candidates(model, tokenizer, row, sentence_index, torch,
+                               max_length=384, top_k=3, max_span_tokens=32):
+    """Locate spans in one supplied source sentence and evidence item."""
+    encoded = encode_pair(tokenizer, row, sentence_index, max_length)
+    if encoded is None:
+        return []
+    fields, offsets, context_tokens = encoded
+    device = next(model.parameters()).device
+    inputs = {key: torch.tensor([fields[key]], device=device)
+              for key in ("input_ids", "attention_mask") if key in fields}
+    model.eval()
+    with torch.inference_mode():
+        output = model(**inputs)
+    spans = top_spans(output.start_logits[0], output.end_logits[0],
+                      offsets, context_tokens, top_k, max_span_tokens)
+    return [{"sentence_index": sentence_index, "start": a, "end": b,
+             "old_span": row["source_sentences"][sentence_index][a:b],
+             "score_above_null": score} for score, a, b in spans]
+
+
 def locate(model, tokenizer, row, torch, max_length=384, max_span_tokens=32):
     model.eval()
     device = next(model.parameters()).device

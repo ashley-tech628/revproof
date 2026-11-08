@@ -7,10 +7,21 @@ FRUIT-WIKI silver examples. The small source-audited Node.js/Flask set is a
 separate technical-domain pilot. Neither silver exact match nor string
 overlap establishes factual support.
 
-## Current experiment: locate, infill, copy
+## Current experiment: reference-planned span editor v2
 
-The [span-editor runbook](research/datahub_span_editor.md) gives the exact
-DataHub commands. The pipeline trains two components:
+The [v2 DataHub runbook](research/datahub_span_v2.md) gives the new training
+and paired evaluation commands. It trains a sentence/evidence selector on
+the publisher's heuristic reference markers, a RoBERTa character-span
+locator on selected evidence items, and a 4-bit `google/flan-t5-xl` LoRA
+infiller on short replacement phrases. Inference proposes multiple evidence
+and span candidates, checks for unsupported new numbers, and copies all
+unmodified text. The new architecture has not yet been trained or measured
+on DataHub; improvement over v1 is an experimental question.
+
+## Previous experiment: locate, infill, copy
+
+The [v1 span-editor runbook](research/datahub_span_editor.md) gives the exact
+DataHub commands for the completed baseline. That pipeline trains two components:
 
 1. A RoBERTa QA locator chooses a sentence and character span from the old
    source using the evidence. Its supervision comes from gold-derived spans.
@@ -41,8 +52,9 @@ publisher examples, and silver exact match is not factual support.
 
 | Location | Purpose |
 | --- | --- |
-| [`span_editor/`](span_editor/) and [`fruit_span.py`](fruit_span.py) | Current locator, infiller and copy-constrained evaluation |
-| [`research/datahub_span_editor.md`](research/datahub_span_editor.md) | DataHub setup, commands, protocol and interpretation |
+| [`span_editor/`](span_editor/) and [`fruit_span.py`](fruit_span.py) | V1 and v2 locator, infiller and copy-constrained evaluation |
+| [`research/datahub_span_v2.md`](research/datahub_span_v2.md) | Current DataHub v2 setup and commands |
+| [`research/datahub_span_editor.md`](research/datahub_span_editor.md) | V1 setup, commands and protocol |
 | [`research/README.md`](research/README.md) | Research decisions and experiment history |
 | [`results/README.md`](results/README.md) | Archived output index; training artifacts are excluded |
 | [`data/`](data/) | Small checked-in datasets, audit notes and protocols |
@@ -65,4 +77,5 @@ python fruit_span.py --train data/fruit/local_gate/local_train_00000.jsonl \
 
 The FRUIT files are large external inputs and are not checked into Git. See
 [`research/datahub_fruit_local.md`](research/datahub_fruit_local.md) for the
-publisher-data conversion. The current runbook starts after that conversion.
+publisher-data conversion. The v2 runbook also shows how to download the
+remaining official train shards.

@@ -11,6 +11,8 @@
 - [Span-editor v2 literature decision](span_editor_v2_literature_decision.md):
   evidence-reference supervision, larger FRUIT training coverage, candidate
   boundaries, and paired evaluation without gold-location leakage.
+- [DataHub span-editor v2 runbook](datahub_span_v2.md): complete download,
+  conversion, three-component training, frozen paired evaluation and audit.
 - [Local-editor case analysis](fruit_local_gate500_analysis.md): the completed
   500-step oracle-locus experiment and provisional human review that motivate
   the new target.
