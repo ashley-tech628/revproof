@@ -16,7 +16,9 @@ locator on selected evidence items, and a 4-bit `google/flan-t5-xl` LoRA
 infiller on short replacement phrases. Inference proposes multiple evidence
 and span candidates, checks for unsupported new numbers, and copies all
 unmodified text. The new architecture has not yet been trained or measured
-on DataHub; improvement over v1 is an experimental question.
+on DataHub; improvement over v1 is an experimental question. A candidate
+recall probe on already inspected development rows runs before the long
+infiller training; the frozen next 100 rows remain reserved for comparison.
 
 ## Previous experiment: locate, infill, copy
 

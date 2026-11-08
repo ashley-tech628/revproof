@@ -114,6 +114,29 @@ set -o pipefail
   2>&1 | tee runs/span_locator_v2.log
 ```
 
+Before the long infiller run, measure candidate recall on the **already
+inspected** v1 development IDs. This probe generates no replacement text and
+must not use `next_dev_100_frozen.json`.
+
+```bash
+cd ~/revproof
+set -o pipefail
+.venv_blackwell/bin/python -u -m span_editor.probe_v2 \
+  --data data/fruit/span_v2/span_dev_v2.jsonl \
+  --seen-summary results/span_v1_fresh_dev/summary.json \
+  --selector runs/span_selector_v2/model \
+  --locator runs/span_locator_v2/model \
+  --output runs/span_v2_seen_probe \
+  2>&1 | tee runs/span_v2_seen_probe.log
+cat runs/span_v2_seen_probe/summary.json
+```
+
+The v1 locator reached the gold sentence on 80/100 and exact character span
+on 30/100. The v2 top-k candidate recall should exceed these values before
+investing in a full infiller run. This is an upper bound: a generated phrase
+and final candidate ranking can still fail. If candidate recall is low, send
+the probe summary for analysis before running the next training command.
+
 ```bash
 cd ~/revproof
 set -o pipefail
@@ -194,6 +217,7 @@ tar -czf ~/revproof_span_v2_results.tgz \
   data/fruit/span_v2/manifest.json \
   runs/span_selector_v2/protocol.json runs/span_selector_v2/train_metrics.json \
   runs/span_locator_v2/protocol.json runs/span_locator_v2/train_metrics.json \
+  runs/span_v2_seen_probe/summary.json \
   runs/span_infiller_v2/protocol.json runs/span_infiller_v2/train_metrics.json \
   runs/span_v1_next100/summary.json runs/span_v1_next100/predictions.jsonl \
   runs/span_v2_next100/summary.json runs/span_v2_next100/predictions.jsonl \
