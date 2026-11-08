@@ -18,7 +18,11 @@
   FRUIT silver development IDs; breakdown of remaining failures.
 - [DataHub span-editor v3 runbook](datahub_span_v3.md): train a complete-span
   boundary ranker, screen candidate recall on inspected examples, and pair
-  v2/v3 on a new frozen development slice. No v3 accuracy result exists yet.
+  v2/v3 on a new frozen development slice. The first v3 screen missed its
+  gate: 56/100 exact spans versus v2's 65/100.
+- [Hard-negative boundary follow-up](datahub_span_v3_hard.md): the unranked
+  v3 pool contained 77/100 gold spans, so mine training-set selector/QA
+  mistakes and test whether a new ranker can keep them in the first eight.
 - [Local-editor case analysis](fruit_local_gate500_analysis.md): the completed
   500-step oracle-locus experiment and provisional human review that motivate
   the new target.

@@ -8,6 +8,9 @@ from span_editor.boundary_v3 import (build_examples, marked_sentence,
                                      rank_boundary_candidates)
 from span_editor.compare_v3 import compare_rows
 from span_editor.evaluate_v2 import inference_view
+from span_editor.mine_boundary_hard import (collect_proposals,
+                                            select_hard_negatives)
+from span_editor.train_boundary_hard import build_examples as build_hard_examples
 
 
 class Tokenizer:
@@ -86,6 +89,40 @@ class BoundaryV3Test(unittest.TestCase):
         self.assertTrue(candidates)
         self.assertTrue(all("sentence" not in x and "evidence" not in x
                             for x in candidates))
+
+    def test_hard_mining_uses_labels_after_proposals(self):
+        sentence = "José joined Example FC in 2018."
+        a = sentence.index("2018")
+        row = {"id": 1, "source": sentence,
+               "source_sentences": [sentence, "The team played in Paris."],
+               "evidence": "(0) joined in 2020 (1) Paris",
+               "evidence_items": ["joined in 2020", "Paris"],
+               "edit_index": 0, "span_start": a, "span_end": a + 4,
+               "reference_ids": [0]}
+        source = inference_view(row)
+        pairs = [{"sentence_index": 0, "evidence_id": 0,
+                  "selector_probability": 0.8}]
+        location = {"sentence_index": 0, "start": a, "end": a + 4,
+                    "score_above_null": 2.0}
+        with patch("span_editor.mine_boundary_hard.rank_pairs",
+                   return_value=pairs), \
+             patch("span_editor.mine_boundary_hard.locate_sentence_candidates",
+                   return_value=[location]):
+            proposals = collect_proposals(None, None, None, None,
+                                          source, None, 384, 384)
+        self.assertTrue(any(x["start"] == a for x in proposals))
+        negatives = select_hard_negatives(row, proposals, limit=4)
+        self.assertTrue(negatives)
+        self.assertLessEqual(len(negatives), 4)
+        self.assertFalse(any(x["sentence_index"] == 0 and
+                             x["evidence_id"] == 0 and
+                             x["start"] == a and x["end"] == a + 4
+                             for x in negatives))
+        mined = [{"id": 1, "negatives": negatives}]
+        examples, positives, negative_count, skipped = build_hard_examples(
+            Tokenizer(), [row], mined)
+        self.assertEqual((positives, negative_count, skipped),
+                         (1, len(negatives), 0))
 
     def test_v2_v3_pairing_and_mismatches(self):
         a = {"id": 1, "source": "old", "gold_full": "new",
