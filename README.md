@@ -15,10 +15,16 @@ the publisher's heuristic reference markers, a RoBERTa character-span
 locator on selected evidence items, and a 4-bit `google/flan-t5-xl` LoRA
 infiller on short replacement phrases. Inference proposes multiple evidence
 and span candidates, checks for unsupported new numbers, and copies all
-unmodified text. The new architecture has not yet been trained or measured
-on DataHub; improvement over v1 is an experimental question. A candidate
-recall probe on already inspected development rows runs before the long
-infiller training; the frozen next 100 rows remain reserved for comparison.
+unmodified text. A candidate recall probe on already inspected development
+rows ran before infiller training, and the next 100 IDs were frozen before
+the paired comparison.
+
+The completed paired evaluation on those 100 frozen FRUIT silver short-span
+rows found **9/100** full exact for v1, **20/100** for v2 forced editing,
+and **17/100** for v2 with a fixed abstention gate. The [case analysis](results/span_v2_frozen_dev/ANALYSIS.md)
+shows that span boundaries and replacement generation remain the main
+bottlenecks. Those 100 rows are now inspected; future model selection needs
+another untouched slice. Exact silver text does not establish factual support.
 
 ## Previous experiment: locate, infill, copy
 
@@ -38,7 +44,7 @@ The first 100 hash-ranked local-development examples were selected during an
 earlier pilot. The evaluator explicitly excludes those IDs before choosing
 new span-development rows. The later-period FRUIT gold test remains unopened.
 
-The latest completed GPU result predates this architecture: a one-sentence
+An earlier GPU result predates this architecture: a one-sentence
 oracle-locus FLAN-T5-XL editor achieved **5/95** exact replacement on
 held-out FRUIT silver development examples after 500 steps, versus **1/95**
 for the unchanged model and **0/95** for copying. The record and manual

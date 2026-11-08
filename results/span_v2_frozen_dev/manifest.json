@@ -1,0 +1,14 @@
+{
+  "role": "archived_paired_fruit_span_v2_dev",
+  "source_archive": "revproof_span_v2_eval_results.tgz",
+  "source_archive_sha256": "73e6e5432f7cc09aa8f3a1fbb677cb397b06dc7ee0848c95f462c6a514a3fde9",
+  "files_sha256": {
+    "audit_blind_unfilled.csv": "18eee58bf59a9deef948030d4be7c7faf7cf8d4a493e9760eaf6999281fa17c6",
+    "paired_forced_summary.json": "64b0ef165ccb93560d1b335f3cc6720c82f5a7104132be20087ed22ce944e17a",
+    "paired_gated_summary.json": "cc4d36c4d28158e0b035edb218ac723593f6353452315d7c599213a1db23c420",
+    "v1_predictions.jsonl": "0374bdeb87d4adf95a70adaf3531af0d5641abf94ae3160e582f45a7812cc609",
+    "v1_summary.json": "63d43466d1f3e1699aa12286c2e812a04372028667ad6dc6c801f4637e49419e",
+    "v2_predictions.jsonl": "d48eff8aad76edae98a9f249c5bee7cb352a4ec0940bc0904a399d5f281011e0",
+    "v2_summary.json": "794d27edd009254c811cfa6a5d6afdaa1dd4eb77cae0b9aa783a0926b6ae480f"
+  }
+}

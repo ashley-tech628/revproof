@@ -13,6 +13,9 @@
   boundaries, and paired evaluation without gold-location leakage.
 - [DataHub span-editor v2 runbook](datahub_span_v2.md): complete download,
   conversion, three-component training, frozen paired evaluation and audit.
+- [Span-editor v2 paired result analysis](../results/span_v2_frozen_dev/ANALYSIS.md):
+  v1 9/100, v2 forced 20/100 and v2 gated 17/100 on the same newly inspected
+  FRUIT silver development IDs; breakdown of remaining failures.
 - [Local-editor case analysis](fruit_local_gate500_analysis.md): the completed
   500-step oracle-locus experiment and provisional human review that motivate
   the new target.

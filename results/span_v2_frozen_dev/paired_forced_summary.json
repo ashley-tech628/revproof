@@ -1,0 +1,14 @@
+{
+  "n": 100,
+  "v1_exact": 9,
+  "v2_exact": 20,
+  "v1_changed": 54,
+  "v2_changed": 100,
+  "v2_only_exact": 12,
+  "v1_only_exact": 1,
+  "role": "paired_silver_development_comparison",
+  "condition": "v2_forced",
+  "v1_sha256": "0374bdeb87d4adf95a70adaf3531af0d5641abf94ae3160e582f45a7812cc609",
+  "v2_sha256": "d48eff8aad76edae98a9f249c5bee7cb352a4ec0940bc0904a399d5f281011e0",
+  "warning": "Silver exact match is not factual support."
+}
