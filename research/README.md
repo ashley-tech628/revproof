@@ -5,6 +5,9 @@
 - [DataHub span-editor runbook](datahub_span_editor.md): strict short-span
   FRUIT subset, trained locator, FLAN-T5-XL infiller, copy-constrained
   reconstruction, and a fresh development slice.
+- [Span-editor v1 result analysis](../results/span_v1_fresh_dev/ANALYSIS.md):
+  31/100 gold-span and 15/100 end-to-end exact on a fixed silver development
+  slice, with per-example error analysis and limits.
 - [Local-editor case analysis](fruit_local_gate500_analysis.md): the completed
   500-step oracle-locus experiment and provisional human review that motivate
   the new target.

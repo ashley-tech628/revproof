@@ -1,0 +1,35 @@
+{
+  "role": "copy_constrained_span_edit",
+  "max_span_chars": 80,
+  "min_retained": 0.4,
+  "splits": [
+    {
+      "split": "train",
+      "input": "data/fruit/local_gate/local_train_00000.jsonl",
+      "output": "data/fruit/span_v1/span_train_00000.jsonl",
+      "read": 2940,
+      "span_too_long": 1163,
+      "insertion_or_deletion_only": 556,
+      "kept": 1096,
+      "too_little_retained": 34,
+      "boundary_whitespace_differs": 91
+    },
+    {
+      "split": "dev",
+      "input": "data/fruit/local_gate/local_dev_00009.jsonl",
+      "output": "data/fruit/span_v1/span_dev_00009.jsonl",
+      "read": 2955,
+      "kept": 1082,
+      "too_little_retained": 59,
+      "insertion_or_deletion_only": 571,
+      "span_too_long": 1156,
+      "boundary_whitespace_differs": 87
+    }
+  ],
+  "hashes": {
+    "data/fruit/local_gate/local_train_00000.jsonl": "56d722d1bae130efaf2f87495be2d6b25943fe75a2a41ae503f51dda58db8aeb",
+    "data/fruit/local_gate/local_dev_00009.jsonl": "92a80a3429f778376f330dc62b97ab8975d4fb904cf2cdfefb2a7a55c5170f75",
+    "data/fruit/span_v1/span_train_00000.jsonl": "9afde612af80d04250fbe1e51a1f1c50f7a7789e74990a0e86e7c97cc3692d63",
+    "data/fruit/span_v1/span_dev_00009.jsonl": "78f5c0d323c3d2c9039ac4db2c1b7f66da8d3e8dff7e07eb00b57bf757dd61eb"
+  }
+}

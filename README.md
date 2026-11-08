@@ -30,8 +30,12 @@ oracle-locus FLAN-T5-XL editor achieved **5/95** exact replacement on
 held-out FRUIT silver development examples after 500 steps, versus **1/95**
 for the unchanged model and **0/95** for copying. The record and manual
 case analysis are in [research/fruit_local_gate500_analysis.md](research/fruit_local_gate500_analysis.md).
-The new span-editor code has passed local contract checks and data conversion;
-GPU training and evaluation are pending.
+The completed v1 span editor achieved **31/100** exact with the gold edit
+span and **15/100** end-to-end exact on a new, fixed FRUIT silver short-span
+development slice. The locator selected the gold sentence on 80/100 and the
+exact character span on 30/100. Read the [per-example analysis](results/span_v1_fresh_dev/ANALYSIS.md)
+before interpreting these numbers: the short-span filter excludes most
+publisher examples, and silver exact match is not factual support.
 
 ## Repository map
 
