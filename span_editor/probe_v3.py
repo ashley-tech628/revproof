@@ -4,7 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
-from span_editor.boundary_v3 import propose
+from span_editor.boundary_v3 import merge_candidates, propose
 from span_editor.common import sha256, write_json
 from span_editor.evaluate_v2 import inference_view
 from span_editor.v2_data import load
@@ -76,7 +76,7 @@ def main():
     details = []
     for n, identifier in enumerate(ids, 1):
         gold = by_id[identifier]
-        pairs, candidates = propose(
+        pairs, candidates, diagnostic = propose(
             boundary, boundary_tokenizer, selector, selector_tokenizer,
             locator, locator_tokenizer, inference_view(gold), torch,
             protocols["selector"]["max_length"],
@@ -84,15 +84,25 @@ def main():
             protocols["boundary"]["max_length"],
             args.top_sentences, args.top_pairs, args.top_spans,
             args.radius, args.max_variants, args.max_candidates,
-            80, args.max_per_pair)
+            80, args.max_per_pair, return_diagnostics=True)
+        def has_gold(items):
+            return any(x["sentence_index"] == gold["edit_index"] and
+                       x["start"] == gold["span_start"] and
+                       x["end"] == gold["span_end"] for x in items)
+        baseline = diagnostic["v2_candidates"]
+        hybrid = merge_candidates(baseline, candidates,
+                                  args.max_candidates // 2,
+                                  args.max_candidates)
         details.append({"id": identifier,
                         "gold_sentence_in_pairs": any(
                             x["sentence_index"] == gold["edit_index"] for x in pairs),
-                        "gold_span_in_candidates": any(
-                            x["sentence_index"] == gold["edit_index"] and
-                            x["start"] == gold["span_start"] and
-                            x["end"] == gold["span_end"] for x in candidates),
-                        "candidate_count": len(candidates)})
+                        "gold_span_in_candidates": has_gold(candidates),
+                        "gold_span_in_v2_candidates": has_gold(baseline),
+                        "gold_span_in_pool": has_gold(diagnostic["pool_locations"]),
+                        "gold_span_in_hybrid": has_gold(hybrid),
+                        "gold_span_in_union16": has_gold(baseline + candidates),
+                        "candidate_count": len(candidates),
+                        "pool_count": len(diagnostic["pool_locations"])})
         print(f"PROBE V3: {n}/{len(ids)}", flush=True)
     args.output.mkdir(parents=True, exist_ok=True)
     summary = {"role": "seen_development_boundary_recall_diagnostic",
@@ -110,6 +120,19 @@ def main():
                                              for x in details),
                "gold_span_in_candidates": sum(x["gold_span_in_candidates"]
                                               for x in details),
+               "gold_span_in_v2_candidates": sum(
+                   x["gold_span_in_v2_candidates"] for x in details),
+               "gold_span_in_pool": sum(x["gold_span_in_pool"] for x in details),
+               "gold_span_in_hybrid": sum(x["gold_span_in_hybrid"]
+                                          for x in details),
+               "gold_span_in_union16": sum(x["gold_span_in_union16"]
+                                           for x in details),
+               "v3_only_gold_span": sum(x["gold_span_in_candidates"] and not
+                                        x["gold_span_in_v2_candidates"]
+                                        for x in details),
+               "v2_only_gold_span": sum(x["gold_span_in_v2_candidates"] and not
+                                        x["gold_span_in_candidates"]
+                                        for x in details),
                "warning": "Candidate recall is an upper bound; no replacement is generated."}
     write_json(args.output / "summary.json", summary)
     write_json(args.output / "details.json", details)

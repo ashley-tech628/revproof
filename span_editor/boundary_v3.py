@@ -150,15 +150,34 @@ def rank_boundary_candidates(candidates, max_candidates=8,
     return selected
 
 
+def merge_candidates(primary, secondary, primary_limit=4, total_limit=8):
+    """A fixed-budget hybrid for diagnosis; deduplicate article locations."""
+    selected, seen = [], set()
+    for group in (primary[:primary_limit], secondary,
+                  primary[primary_limit:]):
+        for candidate in group:
+            key = (candidate["sentence_index"], candidate["start"],
+                   candidate["end"])
+            if key in seen:
+                continue
+            selected.append(candidate)
+            seen.add(key)
+            if len(selected) == total_limit:
+                return selected
+    return selected
+
+
 def propose(model, tokenizer, selector, selector_tokenizer, locator,
             locator_tokenizer, source, torch, selector_length, locator_length,
             boundary_length, top_sentences=4, top_pairs=6, top_spans=3,
             radius=3, max_variants=36, max_candidates=8,
-            max_span_chars=80, max_per_pair=2):
+            max_span_chars=80, max_per_pair=2,
+            return_diagnostics=False):
     """All proposal inputs are inference-visible fields of `source`."""
     pairs = rank_pairs(selector, selector_tokenizer, source, torch,
                        top_sentences, top_pairs, selector_length)
     raw = []
+    v2_candidates = []
     for pair_rank, pair in enumerate(pairs):
         evidence_id = pair["evidence_id"]
         sentence_index = pair["sentence_index"]
@@ -169,6 +188,8 @@ def propose(model, tokenizer, selector, selector_tokenizer, locator,
                                                local, sentence_index, torch,
                                                locator_length, top_spans)
         for span_rank, location in enumerate(locations):
+            if len(v2_candidates) < max_candidates:
+                v2_candidates.append({**location, "evidence_id": evidence_id})
             for a, b in nearby_spans(sentence, location["start"],
                                      location["end"], radius,
                                      max_span_chars, max_variants):
@@ -190,5 +211,13 @@ def propose(model, tokenizer, selector, selector_tokenizer, locator,
                               boundary_length)
     chosen = rank_boundary_candidates(scored, max_candidates, max_per_pair)
     # `sentence` and `evidence` are duplicated for scoring, not result storage.
-    return pairs, [{k: v for k, v in x.items() if k not in ("sentence", "evidence")}
-                   for x in chosen]
+    compact = lambda items: [{k: v for k, v in x.items()
+                              if k not in ("sentence", "evidence")}
+                             for x in items]
+    if return_diagnostics:
+        return pairs, compact(chosen), {
+            "v2_candidates": v2_candidates,
+            "pool_locations": [{"sentence_index": x["sentence_index"],
+                                "start": x["start"], "end": x["end"]}
+                               for x in unique.values()]}
+    return pairs, compact(chosen)

@@ -12,9 +12,11 @@ overlap establishes factual support.
 The [v3 DataHub runbook](research/datahub_span_v3.md) trains one RoBERTa
 classifier to score complete character-span boundaries around existing QA
 proposals. It reuses the v2 evidence selector and FLAN-T5-XL infiller, then
-compares v2 and v3 on a newly frozen 100-row development slice. V3 is code
-and a protocol, not a measured improvement yet. The later-period gold test
-remains untouched.
+compares v2 and v3 on a newly frozen 100-row development slice. The first
+already-inspected candidate probe reached 56/100 exact silver spans, below
+v2's 65/100 under the same eight-candidate limit. A pool-versus-ranking
+diagnostic is in progress; no v3 final-edit accuracy result exists yet. The
+later-period gold test remains untouched.
 
 ## Completed experiment: reference-planned span editor v2
 

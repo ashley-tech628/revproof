@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import patch
 
 from span_editor.boundary_v3 import (build_examples, marked_sentence,
-                                     nearby_spans, propose,
+                                     merge_candidates, nearby_spans, propose,
                                      rank_boundary_candidates)
 from span_editor.compare_v3 import compare_rows
 from span_editor.evaluate_v2 import inference_view
@@ -50,6 +50,16 @@ class BoundaryV3Test(unittest.TestCase):
         chosen = rank_boundary_candidates(candidates, 3, 2)
         self.assertEqual(len(chosen), 3)
         self.assertEqual([x["pair_rank"] for x in chosen], [0, 0, 1])
+
+    def test_hybrid_respects_eight_location_budget(self):
+        baseline = [{"sentence_index": 0, "start": i, "end": i + 1}
+                    for i in range(8)]
+        refined = [{"sentence_index": 0, "start": i, "end": i + 1}
+                   for i in (0, 10, 11, 12, 13)]
+        hybrid = merge_candidates(baseline, refined, 4, 8)
+        self.assertEqual(len(hybrid), 8)
+        self.assertEqual({x["start"] for x in hybrid},
+                         {0, 1, 2, 3, 10, 11, 12, 13})
 
     def test_proposal_path_uses_only_inference_view(self):
         sentence = "José joined Example FC in 2018."

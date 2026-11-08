@@ -81,6 +81,15 @@ seen rows. If v3 does not exceed 65, stop here and send the probe summary;
 the boundary ranker has not demonstrated better span coverage. If it exceeds
 65, continue. Even better recall is only an upper bound on final correctness.
 
+The first DataHub probe on 2026-11-08 returned **56/100**, so the current
+v3 ranking should not enter step 4. The updated diagnostic code reports the
+v2 first-eight baseline, all proposed boundary spans before ranking, the v3
+first eight, and a fixed-budget four-plus-four hybrid on the same seen IDs.
+After uploading the diagnostic patch, run the same probe with
+`--output runs/span_v3_seen_diagnostic`. If the all-proposal pool is high but
+v3 top eight is low, revise ranking; if the pool is low, revise proposals.
+The new frozen 100 IDs remain unexamined.
+
 ## 4. Evaluate v2 and v3 on the newly frozen 100 IDs
 
 Run both on exactly `next_dev_100_v3_frozen.json`. The v2 evaluator's new
