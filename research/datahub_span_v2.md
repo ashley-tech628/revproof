@@ -132,9 +132,10 @@ cat runs/span_v2_seen_probe/summary.json
 ```
 
 The v1 locator reached the gold sentence on 80/100 and exact character span
-on 30/100. The v2 top-k candidate recall should exceed these values before
-investing in a full infiller run. This is an upper bound: a generated phrase
-and final candidate ranking can still fail. If candidate recall is low, send
+on 30/100. The v2 top-k candidate recall should comfortably exceed these
+values before investing in a full infiller run. Top-k recall is easier than
+v1's top-1 exact span result, so this is only a preliminary screen: a generated
+phrase and final candidate ranking can still fail. If candidate recall is low, send
 the probe summary for analysis before running the next training command.
 
 ```bash
@@ -202,6 +203,11 @@ set -o pipefail
   --v2 runs/span_v2_next100/predictions.jsonl \
   --output runs/span_v1_v2_paired
 cat runs/span_v1_v2_paired/paired_summary.json
+.venv_blackwell/bin/python -m span_editor.compare_v2 \
+  --v1 runs/span_v1_next100/predictions.jsonl \
+  --v2 runs/span_v2_next100/predictions.jsonl \
+  --condition v2_forced --output runs/span_v1_v2_forced_paired
+cat runs/span_v1_v2_forced_paired/paired_summary.json
 ```
 
 The comparison refuses unequal IDs, source articles, or silver targets. Its
@@ -222,6 +228,7 @@ tar -czf ~/revproof_span_v2_results.tgz \
   runs/span_v1_next100/summary.json runs/span_v1_next100/predictions.jsonl \
   runs/span_v2_next100/summary.json runs/span_v2_next100/predictions.jsonl \
   runs/span_v1_v2_paired/paired_summary.json \
+  runs/span_v1_v2_forced_paired/paired_summary.json \
   runs/span_v1_v2_paired/audit_blind.csv
 ls -lh ~/revproof_span_v2_results.tgz
 ```
