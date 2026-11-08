@@ -23,7 +23,9 @@ def edit_content_f1(old, prediction, gold):
     pd, gd = source - predicted, source - reference
     match = sum((pa & ga).values()) + sum((pd & gd).values())
     size = sum(pa.values()) + sum(ga.values()) + sum(pd.values()) + sum(gd.values())
-    return 2 * match / size if size else 1.0
+    # Word tokenization ignores punctuation/case. A no-op must not receive
+    # perfect edit credit when the silver target differs only in those forms.
+    return 2 * match / size if size else float(prediction == gold)
 
 
 def reconstruct_at(row, sentence_index, replacement):
@@ -215,6 +217,7 @@ def main():
     report = {"role": "train_overlap_positive_control" if args.positive_control else
               "held_out_silver_span_edit", "model": args.model,
               "adapter": str(args.adapter), "locator": str(args.locator) if args.locator else None,
+              "metric_version": 2,
               "locator_threshold": args.locator_threshold if args.locator else None,
               "data_sha256": sha256(args.data), "selected": len(rows),
               "skip_rows": 0 if args.positive_control else args.skip_rows,

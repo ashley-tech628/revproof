@@ -143,7 +143,10 @@ precise than skipping the first 100 span rows, because the two filters create
 different rank lists. Keep the same 100 selected examples for every model
 condition. The evaluator records the IDs, file hashes, raw predictions,
 locator accuracy (including a lexical sentence-selection baseline), exact
-matches, changed count, and edit-content overlap.
+matches, changed count, and edit-content overlap. Metric version 2 does not
+award perfect edit-content credit to unchanged output when the only silver
+change is punctuation or case; the earlier eight-row control's edit-content
+F1 used version 1. Exact-match counts are unchanged by this correction.
 
 ```bash
 cd ~/revproof

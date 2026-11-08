@@ -3,7 +3,7 @@
 import unittest
 
 from fruit_span import apply_span, extract_span, prompt
-from span_editor.evaluate import make_prediction
+from span_editor.evaluate import edit_content_f1, make_prediction
 from span_editor.locator import best_span, candidate_sentences, question
 
 
@@ -44,6 +44,12 @@ class SpanEditorTest(unittest.TestCase):
         pred = make_prediction(row, 0, 4, 8, "2020", 80)
         self.assertFalse(pred["scores"]["replacement_exact"])
         self.assertFalse(pred["scores"]["full_exact"])
+
+    def test_punctuation_only_gold_does_not_reward_unchanged_copy(self):
+        self.assertEqual(edit_content_f1("Hello world.", "Hello world.",
+                                         "Hello world!"), 0.0)
+        self.assertEqual(edit_content_f1("Hello world.", "Hello world!",
+                                         "Hello world!"), 1.0)
 
     def test_locator_uses_source_and_evidence_only(self):
         row, _ = extract_span(sample())
