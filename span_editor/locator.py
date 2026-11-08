@@ -31,9 +31,13 @@ def encode_pair(tokenizer, row, sentence_index, max_length=384, training=False):
     try:
         encoded = tokenizer(question(row), context, truncation="only_first",
                             max_length=max_length, return_offsets_mapping=True)
-    except ValueError:
-        # Some unusually long contexts cannot fit even when the question is truncated.
-        return None
+    except Exception as exc:
+        # The fast tokenizer raises a plain Exception for an overlong second
+        # sequence under `only_first`, and a ValueError in other versions.
+        # Skip that pair; do not hide unrelated tokenizer failures.
+        if isinstance(exc, ValueError) or "sequence to truncate too short" in str(exc).lower():
+            return None
+        raise
     sequence_ids = encoded.sequence_ids()
     offsets = encoded.pop("offset_mapping")
     context_tokens = [i for i, kind in enumerate(sequence_ids)

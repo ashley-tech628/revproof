@@ -5,7 +5,7 @@ import unittest
 from span_editor.evaluate_v2 import (choose_candidate, inference_view,
                                      phrase_checks)
 from span_editor.compare_v2 import compare_rows
-from span_editor.locator import top_spans
+from span_editor.locator import encode_pair, top_spans
 from span_editor.train_infiller_v2 import referenced_view
 from span_editor.train_selector import training_pairs
 from span_editor.v2_data import edit_references, extract, split_evidence
@@ -63,6 +63,20 @@ class SpanEditorV2Test(unittest.TestCase):
         forced, gated = choose_candidate([valid], 0.8, 0)
         self.assertEqual(forced, valid)
         self.assertIsNone(gated)
+
+    def test_overlong_locator_pair_is_skipped(self):
+        class TooLong:
+            def __call__(self, *args, **kwargs):
+                raise Exception("Truncation error: Sequence to truncate too short to respect the provided max_length")
+
+        class Broken:
+            def __call__(self, *args, **kwargs):
+                raise Exception("tokenizer corrupted")
+
+        row, _ = extract(raw_example())
+        self.assertIsNone(encode_pair(TooLong(), row, 0, training=True))
+        with self.assertRaisesRegex(Exception, "tokenizer corrupted"):
+            encode_pair(Broken(), row, 0, training=True)
 
     def test_numeric_check_does_not_invent_dates(self):
         self.assertEqual(phrase_checks("2020", "2018", "joined in 2020",
